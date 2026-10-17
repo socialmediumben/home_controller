@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" width="100%" height="100%">
+  <defs>
+    <radialGradient id="libFloor" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" stop-color="#2D1A10" />
+      <stop offset="100%" stop-color="#140B07" />
+    </radialGradient>
+    <pattern id="woodPlanks" width="120" height="40" patternUnits="userSpaceOnUse">
+      <rect width="120" height="40" fill="#2E1B10" stroke="#1A0D07" stroke-width="2" />
+      <line x1="60" y1="0" x2="60" y2="40" stroke="#1A0D07" stroke-width="1.5" />
+    </pattern>
+    <filter id="arcaneCircleGlow">
+      <feGaussianBlur stdDeviation="8" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <rect width="1200" height="800" fill="url(#libFloor)" />
+  <rect width="1200" height="800" fill="url(#woodPlanks)" opacity="0.4" />
+
+  <!-- Outer Stone Walls -->
+  <rect x="20" y="20" width="1160" height="760" fill="none" stroke="#57534E" stroke-width="24" rx="16" />
+
+  <!-- Massive Bookshelves (Top & Bottom) -->
+  <g fill="#451A03" stroke="#291102" stroke-width="4">
+    <!-- Top Shelves -->
+    <rect x="80" y="50" width="220" height="60" rx="4" />
+    <rect x="340" y="50" width="240" height="60" rx="4" />
+    <rect x="620" y="50" width="240" height="60" rx="4" />
+    <rect x="900" y="50" width="220" height="60" rx="4" />
+    <!-- Bottom Shelves -->
+    <rect x="80" y="690" width="220" height="60" rx="4" />
+    <rect x="340" y="690" width="240" height="60" rx="4" />
+    <rect x="620" y="690" width="240" height="60" rx="4" />
+    <rect x="900" y="690" width="220" height="60" rx="4" />
+  </g>
+
+  <!-- Books details on shelves -->
+  <g fill="#D97706" opacity="0.8">
+    <rect x="90" y="60" width="15" height="40" rx="2" fill="#DC2626" />
+    <rect x="110" y="60" width="20" height="40" rx="2" fill="#2563EB" />
+    <rect x="135" y="60" width="12" height="40" rx="2" fill="#059669" />
+    <rect x="150" y="60" width="18" height="40" rx="2" fill="#7C3AED" />
+    <rect x="175" y="60" width="25" height="40" rx="2" fill="#D97706" />
+
+    <rect x="350" y="60" width="20" height="40" rx="2" fill="#2563EB" />
+    <rect x="375" y="60" width="16" height="40" rx="2" fill="#DC2626" />
+    <rect x="395" y="60" width="22" height="40" rx="2" fill="#7C3AED" />
+  </g>
+
+  <!-- Ornate Center Arcane Summoning Circle -->
+  <g transform="translate(600, 400)" stroke="#F59E0B" stroke-width="3" fill="none" filter="url(#arcaneCircleGlow)">
+    <circle r="190" stroke-dasharray="12,8" opacity="0.8" />
+    <circle r="160" opacity="0.9" />
+    <circle r="130" stroke-dasharray="6,6" opacity="0.7" />
+    <!-- Runes & Geometric stars -->
+    <polygon points="0,-160 138,80 -138,80" stroke-width="2" />
+    <polygon points="0,160 138,-80 -138,-80" stroke-width="2" />
+    <circle r="40" fill="#F59E0B" fill-opacity="0.15" />
+    <circle r="15" fill="#FEF08A" />
+  </g>
+
+  <!-- Study Desks & Scrolls (Left & Right) -->
+  <g fill="#57361E" stroke="#2B180B" stroke-width="4">
+    <!-- Left Reading Table -->
+    <rect x="120" y="260" width="100" height="280" rx="8" />
+    <!-- Right Reading Table -->
+    <rect x="980" y="260" width="100" height="280" rx="8" />
+  </g>
+  <!-- Chairs -->
+  <g fill="#382112" stroke="#1D1109" stroke-width="2">
+    <circle cx="80" cy="320" r="22" />
+    <circle cx="80" cy="480" r="22" />
+    <circle cx="1120" cy="320" r="22" />
+    <circle cx="1120" cy="480" r="22" />
+  </g>
+</svg>

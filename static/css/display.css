@@ -1,0 +1,209 @@
+/* Display Client Stylesheet for Window TV, Picture Frame, and Table Projector */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+html, body {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background-color: #000;
+  color: #fff;
+  font-family: 'Cinzel', Georgia, serif;
+}
+
+.display-viewport {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/* Layer Cross-Fading */
+.display-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transition: opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.display-layer.active {
+  opacity: 1;
+  pointer-events: auto;
+  z-index: 10;
+}
+
+.display-layer.incoming {
+  opacity: 1;
+  z-index: 20;
+}
+
+/* Media Elements */
+.media-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.media-container img, 
+.media-container video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.media-container iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+/* Subtle Breathing Animation for Portraits */
+.ken-burns {
+  animation: portraitBreath 16s infinite alternate ease-in-out;
+}
+
+@keyframes portraitBreath {
+  0% { transform: scale(1); }
+  100% { transform: scale(1.04); }
+}
+
+/* Weather Canvas for Window TV */
+canvas.weather-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 5;
+}
+
+/* Gothic Window Pane Overlay (53" TV) */
+.gothic-mullions {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 50;
+  box-shadow: inset 0 0 100px rgba(0, 0, 0, 0.85);
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  border: 24px solid #1c150c;
+  outline: 6px solid #0d0905;
+}
+
+.window-pane {
+  border: 10px solid #291c10;
+  box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.6);
+  position: relative;
+}
+
+/* Ornate Picture Frame (Portrait Monitor) */
+.ornate-picture-frame {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 50;
+  border: 36px solid transparent;
+  border-image: linear-gradient(135deg, #d4a34b 0%, #78350f 25%, #fde68a 50%, #451a03 75%, #b48239 100%) 36;
+  box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.8), 0 0 40px rgba(0, 0, 0, 0.9);
+}
+
+.portrait-caption-banner {
+  position: absolute;
+  bottom: 45px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(15, 10, 5, 0.9);
+  border: 2px solid #d4a34b;
+  padding: 8px 24px;
+  border-radius: 6px;
+  font-size: 18px;
+  color: #fde68a;
+  letter-spacing: 2px;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.7);
+  z-index: 60;
+  pointer-events: none;
+}
+
+/* Table Tactical Grid Overlay */
+.tactical-grid-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 40;
+}
+
+/* Floating Controls (Fade away when inactive) */
+.display-toolbar {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  background: rgba(20, 14, 8, 0.85);
+  border: 1px solid #b48239;
+  border-radius: 30px;
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: 100;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  backdrop-filter: blur(4px);
+}
+
+body:hover .display-toolbar {
+  opacity: 1;
+}
+
+.toolbar-btn {
+  background: none;
+  border: none;
+  color: #d4a34b;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: inherit;
+}
+
+.toolbar-btn:hover {
+  background: rgba(212, 163, 75, 0.2);
+}
+
+.screen-label {
+  font-size: 12px;
+  color: #b8a68b;
+  letter-spacing: 1px;
+}

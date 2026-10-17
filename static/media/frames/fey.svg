@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000" width="100%" height="100%">
+  <defs>
+    <radialGradient id="feyBg" cx="50%" cy="40%" r="65%">
+      <stop offset="0%" stop-color="#581C87" />
+      <stop offset="60%" stop-color="#2E1065" />
+      <stop offset="100%" stop-color="#0F0426" />
+    </radialGradient>
+    <filter id="feyGlow">
+      <feGaussianBlur stdDeviation="10" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <rect width="800" height="1000" fill="url(#feyBg)" />
+
+  <!-- Gossamer Butterfly Wings in Background -->
+  <path d="M 400 450 C 250 150 50 200 80 400 C 100 550 280 500 400 520 Z" fill="#C084FC" opacity="0.35" filter="url(#feyGlow)" />
+  <path d="M 400 450 C 550 150 750 200 720 400 C 700 550 520 500 400 520 Z" fill="#C084FC" opacity="0.35" filter="url(#feyGlow)" />
+
+  <!-- Ethereal Fey Queen -->
+  <ellipse cx="400" cy="850" rx="200" ry="250" fill="#7E22CE" />
+  <path d="M 330 650 Q 400 680 470 650 L 450 950 L 350 950 Z" fill="#A855F7" />
+
+  <!-- Pointed Fey Ears & Silver Hair -->
+  <path d="M 280 380 L 190 320 L 290 440 Z" fill="#FBCFE8" />
+  <path d="M 520 380 L 610 320 L 510 440 Z" fill="#FBCFE8" />
+  <ellipse cx="400" cy="380" rx="140" ry="180" fill="#E9D5FF" />
+
+  <!-- Face -->
+  <ellipse cx="400" cy="400" rx="90" ry="120" fill="#FDE8E8" />
+  <!-- Glowing Violet Eyes -->
+  <ellipse cx="365" cy="390" rx="14" ry="10" fill="#A855F7" filter="url(#feyGlow)" />
+  <ellipse cx="435" cy="390" rx="14" ry="10" fill="#A855F7" filter="url(#feyGlow)" />
+  <circle cx="365" cy="390" r="4" fill="#FFFFFF" />
+  <circle cx="435" cy="390" r="4" fill="#FFFFFF" />
+
+  <!-- Floral Vine Crown -->
+  <path d="M 300 320 Q 400 280 500 320" stroke="#10B981" stroke-width="8" fill="none" />
+  <circle cx="350" cy="305" r="12" fill="#F472B6" />
+  <circle cx="400" cy="290" r="16" fill="#38BDF8" />
+  <circle cx="450" cy="305" r="12" fill="#F472B6" />
+
+  <g transform="translate(150, 910)">
+    <rect x="0" y="0" width="500" height="60" rx="8" fill="#3B0764" stroke="#C084FC" stroke-width="3" />
+    <text x="250" y="38" font-family="Cinzel, Georgia, serif" font-size="24" font-weight="bold" fill="#F5D0FE" text-anchor="middle" letter-spacing="3">QUEEN TITANIA</text>
+  </g>
+</svg>

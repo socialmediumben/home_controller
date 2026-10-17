@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000" width="100%" height="100%">
+  <defs>
+    <radialGradient id="dragBg" cx="50%" cy="40%" r="65%">
+      <stop offset="0%" stop-color="#991B1B" />
+      <stop offset="50%" stop-color="#450A0A" />
+      <stop offset="100%" stop-color="#180202" />
+    </radialGradient>
+    <filter id="fireGlow">
+      <feGaussianBlur stdDeviation="12" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <rect width="800" height="1000" fill="url(#dragBg)" />
+
+  <!-- Flying Embers in Background -->
+  <g fill="#F59E0B" filter="url(#fireGlow)">
+    <circle cx="120" cy="200" r="8" />
+    <circle cx="280" cy="150" r="5" />
+    <circle cx="680" cy="220" r="10" />
+    <circle cx="720" cy="400" r="6" />
+    <circle cx="150" cy="600" r="9" />
+  </g>
+
+  <!-- Dragon Head & Horns -->
+  <!-- Huge Curved Horns -->
+  <path d="M 330 280 C 250 150 180 80 80 120 C 140 220 220 300 310 330 Z" fill="#1C1917" stroke="#991B1B" stroke-width="4" />
+  <path d="M 470 280 C 550 150 620 80 720 120 C 660 220 580 300 490 330 Z" fill="#1C1917" stroke="#991B1B" stroke-width="4" />
+
+  <!-- Neck Scales -->
+  <path d="M 280 400 L 220 950 L 580 950 L 520 400 Z" fill="#7F1D1D" stroke="#450A0A" stroke-width="6" />
+  <!-- Underbelly Scales -->
+  <path d="M 340 460 L 310 950 L 490 950 L 460 460 Z" fill="#D97706" />
+
+  <!-- Snout & Jaw -->
+  <polygon points="400,180 480,320 540,480 400,560 260,480 320,320" fill="#B91C1C" stroke="#7F1D1D" stroke-width="6" />
+  <polygon points="400,240 450,330 400,480 350,330" fill="#991B1B" />
+
+  <!-- Slit Eyes of Flame -->
+  <ellipse cx="340" cy="340" rx="24" ry="14" fill="#FEF08A" filter="url(#fireGlow)" />
+  <ellipse cx="460" cy="340" rx="24" ry="14" fill="#FEF08A" filter="url(#fireGlow)" />
+  <ellipse cx="340" cy="340" rx="4" ry="14" fill="#450A0A" />
+  <ellipse cx="460" cy="340" rx="4" ry="14" fill="#450A0A" />
+
+  <!-- Fangs & Teeth -->
+  <polygon points="320,490 335,530 350,490" fill="#FEF3C7" />
+  <polygon points="370,490 385,540 400,490" fill="#FEF3C7" />
+  <polygon points="400,490 415,540 430,490" fill="#FEF3C7" />
+  <polygon points="450,490 465,530 480,490" fill="#FEF3C7" />
+
+  <!-- Smoking Nostrils -->
+  <ellipse cx="380" cy="460" rx="10" ry="16" fill="#450A0A" />
+  <ellipse cx="420" cy="460" rx="10" ry="16" fill="#450A0A" />
+  <path d="M 370 460 C 320 440 280 400 240 410" stroke="#F59E0B" stroke-width="8" stroke-linecap="round" fill="none" opacity="0.6" filter="url(#fireGlow)" />
+  <path d="M 430 460 C 480 440 520 400 560 410" stroke="#F59E0B" stroke-width="8" stroke-linecap="round" fill="none" opacity="0.6" filter="url(#fireGlow)" />
+
+  <g transform="translate(150, 910)">
+    <rect x="0" y="0" width="500" height="60" rx="8" fill="#450A0A" stroke="#DC2626" stroke-width="3" />
+    <text x="250" y="38" font-family="Cinzel, Georgia, serif" font-size="24" font-weight="bold" fill="#FCA5A5" text-anchor="middle" letter-spacing="3">VERMITHRAX THE RED</text>
+  </g>
+</svg>

@@ -1,0 +1,25 @@
+# Python cache and bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+
+# Environments
+.env
+.venv/
+venv/
+env/
+ENV/
+
+# Sensitive credentials & secrets (NEVER commit passwords!)
+secrets.json
+
+# Operating System & Editor artifacts
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/
+*.swp
+*.swo

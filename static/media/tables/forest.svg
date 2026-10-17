@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" width="100%" height="100%">
+  <!-- Lush Forest Floor -->
+  <rect width="1200" height="800" fill="#14532D" />
+
+  <!-- River Flowing Top-Right to Bottom-Left -->
+  <path d="M 900 0 Q 750 350 400 450 T 0 800 L 0 700 Q 350 350 700 250 T 800 0 Z" fill="#0284C7" stroke="#0369A1" stroke-width="4" />
+
+  <!-- Wooden Bridge Over River -->
+  <g transform="translate(480, 310) rotate(-40)">
+    <rect x="0" y="0" width="90" height="180" rx="4" fill="#78350F" stroke="#451A03" stroke-width="4" />
+    <line x1="0" y1="30" x2="90" y2="30" stroke="#451A03" stroke-width="2" />
+    <line x1="0" y1="60" x2="90" y2="60" stroke="#451A03" stroke-width="2" />
+    <line x1="0" y1="90" x2="90" y2="90" stroke="#451A03" stroke-width="2" />
+    <line x1="0" y1="120" x2="90" y2="120" stroke="#451A03" stroke-width="2" />
+    <line x1="0" y1="150" x2="90" y2="150" stroke="#451A03" stroke-width="2" />
+  </g>
+
+  <!-- Dirt Road Passing East-West -->
+  <path d="M 0 380 Q 500 420 1200 370 L 1200 490 Q 500 520 0 490 Z" fill="#78350F" opacity="0.65" />
+
+  <!-- Large Foliage Canopy / Trees -->
+  <!-- Tree 1 -->
+  <circle cx="160" cy="180" r="100" fill="#15803D" stroke="#166534" stroke-width="6" />
+  <circle cx="160" cy="180" r="70" fill="#16A34A" />
+
+  <!-- Tree 2 -->
+  <circle cx="420" cy="120" r="90" fill="#15803D" stroke="#166534" stroke-width="6" />
+  <circle cx="420" cy="120" r="60" fill="#16A34A" />
+
+  <!-- Tree 3 -->
+  <circle cx="1020" cy="160" r="110" fill="#15803D" stroke="#166534" stroke-width="6" />
+  <circle cx="1020" cy="160" r="75" fill="#16A34A" />
+
+  <!-- Tree 4 -->
+  <circle cx="950" cy="620" r="100" fill="#15803D" stroke="#166534" stroke-width="6" />
+  <circle cx="950" cy="620" r="65" fill="#16A34A" />
+
+  <!-- Tree 5 -->
+  <circle cx="250" cy="680" r="90" fill="#15803D" stroke="#166534" stroke-width="6" />
+  <circle cx="250" cy="680" r="60" fill="#16A34A" />
+</svg>

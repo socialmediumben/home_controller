@@ -1,0 +1,451 @@
+{
+  "version": "1.2.5",
+  "server": {
+    "host": "0.0.0.0",
+    "port": 8088
+  },
+  "hubspace": {
+    "enabled": true,
+    "username": "socialmediumspace@gmail.com",
+    "password": "",
+    "poll_interval_seconds": 30,
+    "selected_rooms": [],
+    "selected_devices": []
+  },
+  "selected_scenes": [],
+  "home_assistant": {
+    "enabled": false,
+    "url": "http://homeassistant.local:8123",
+    "token": "",
+    "entity_id": "light.game_room"
+  },
+  "current_state": {
+    "scene_id": "study",
+    "scene_name": "The Archmage's Study",
+    "lighting": {
+      "power": false,
+      "brightness": 65,
+      "color": "#FF9E3B",
+      "effect": "candle_flicker",
+      "is_simulator": false,
+      "status_message": "Connected to Hubspace (13 device(s) found)",
+      "devices_count": 13,
+      "devices": [
+        {
+          "id": "cbd94b61-13ee-4082-aac2-00d41288c48c",
+          "name": "Entryway",
+          "model": "Light",
+          "power": true,
+          "brightness": 85,
+          "color": "#FF9E3B"
+        },
+        {
+          "id": "8f12c1fa-d2e7-4548-add5-2b02fa9f7245",
+          "name": "Social Medium",
+          "model": "Light",
+          "power": true,
+          "brightness": 85,
+          "color": "#FF9E3B"
+        },
+        {
+          "id": "ff70e95c-eb29-4691-b075-11c1d821bd99",
+          "name": "Social Medium",
+          "model": "Light",
+          "power": true,
+          "brightness": 85,
+          "color": "#FF9E3B"
+        },
+        {
+          "id": "56c716cc-9713-4fd1-aa84-d417be5fb92f",
+          "name": "Defiant Gate",
+          "model": "Light",
+          "power": true,
+          "brightness": 85,
+          "color": "#FF9E3B"
+        },
+        {
+          "id": "077aa830-3fb1-45ef-90ee-d395376434ae",
+          "name": "Workshop Lights",
+          "model": "Light",
+          "power": true,
+          "brightness": 85,
+          "color": "#FF9E3B"
+        },
+        {
+          "id": "97e8f14a-f1f0-4a4f-b1d7-705f180d7ee0",
+          "name": "Sword Light",
+          "model": "Light",
+          "power": true,
+          "brightness": 85,
+          "color": "#FF9E3B"
+        },
+        {
+          "id": "372310c5-60c7-4d35-8f63-33ba7260d440",
+          "name": "Dragon",
+          "model": "Light",
+          "power": true,
+          "brightness": 85,
+          "color": "#FF9E3B"
+        },
+        {
+          "id": "1a748aff-4797-4069-880b-65ff5e690da1",
+          "name": "Portal Light",
+          "model": "Light",
+          "power": true,
+          "brightness": 85,
+          "color": "#FF9E3B"
+        },
+        {
+          "id": "d4c48841-3245-400e-8418-55d02959c744",
+          "name": "Star Lights",
+          "model": "Light",
+          "power": true,
+          "brightness": 85,
+          "color": "#FF9E3B"
+        },
+        {
+          "id": "b7307e12-5901-41e2-a5c0-5743c81e0b43",
+          "name": "Main Lights",
+          "model": "Light",
+          "power": true,
+          "brightness": 85,
+          "color": "#FF9E3B"
+        },
+        {
+          "id": "c41e1ff0-ad79-4879-a633-e9645f1bee96",
+          "name": "Sign Light",
+          "model": "Light",
+          "power": true,
+          "brightness": 85,
+          "color": "#FF9E3B"
+        },
+        {
+          "id": "09652124-9ee7-4e07-aa81-5ae16b9c7c86",
+          "name": "Sun Light",
+          "model": "Light",
+          "power": true,
+          "brightness": 85,
+          "color": "#FF9E3B"
+        },
+        {
+          "id": "0ef44dd3-327c-49ca-add9-4e350327df42",
+          "name": "Back Door",
+          "model": "Light",
+          "power": true,
+          "brightness": 85,
+          "color": "#FF9E3B"
+        }
+      ]
+    },
+    "displays": {
+      "window": {
+        "id": "rainy_window",
+        "title": "Rain on Castle Glass",
+        "type": "canvas_effect",
+        "effect_type": "rain_storm",
+        "src": "",
+        "show_mullions": true
+      },
+      "frame": {
+        "id": "archmage",
+        "title": "Archmage Ignis",
+        "type": "portrait",
+        "src": "/static/media/frames/archmage.svg",
+        "caption": "Grand Conjurer of the Silver Spire",
+        "show_ornate_border": true
+      },
+      "table": {
+        "id": "arcane_library",
+        "title": "The Wayfarer Tavern",
+        "type": "map",
+        "src": "/static/media/tables/tavern.svg",
+        "grid_enabled": true,
+        "grid_size": 60,
+        "grid_color": "rgba(255, 215, 0, 0.35)",
+        "roll20_url": ""
+      }
+    }
+  },
+  "presets": [
+    {
+      "id": "study",
+      "name": "The Archmage's Study",
+      "icon": "book-open",
+      "description": "Warm glowing candles, gentle rain against the glass, and quiet arcane study.",
+      "lighting": {
+        "power": true,
+        "brightness": 65,
+        "color": "#FF9E3B",
+        "effect": "candle_flicker"
+      },
+      "displays": {
+        "window": {
+          "id": "rainy_window",
+          "title": "Rain on Castle Glass",
+          "type": "canvas_effect",
+          "effect_type": "rain_storm",
+          "src": "",
+          "show_mullions": true
+        },
+        "frame": {
+          "id": "archmage",
+          "title": "Archmage Ignis",
+          "type": "portrait",
+          "src": "/static/media/frames/archmage.svg",
+          "caption": "Grand Conjurer of the Silver Spire",
+          "show_ornate_border": true
+        },
+        "table": {
+          "id": "arcane_library",
+          "title": "The Wayfarer Tavern",
+          "type": "map",
+          "src": "/static/media/tables/tavern.svg",
+          "grid_enabled": true,
+          "grid_size": 60,
+          "grid_color": "rgba(255, 215, 0, 0.35)",
+          "roll20_url": ""
+        }
+      }
+    },
+    {
+      "id": "storm",
+      "name": "Thunderstorm at Midnight",
+      "icon": "cloud-lightning",
+      "description": "Cold blue gloom, flashing lightning strikes, and howling gale winds.",
+      "lighting": {
+        "power": true,
+        "brightness": 40,
+        "color": "#A855F7",
+        "effect": "none"
+      },
+      "displays": {
+        "window": {
+          "id": "thunderstorm",
+          "title": "Rain on Castle Glass",
+          "type": "canvas_effect",
+          "effect_type": "rain_storm",
+          "src": "",
+          "show_mullions": true
+        },
+        "frame": {
+          "id": "lich",
+          "title": "Lord Malakor",
+          "type": "portrait",
+          "src": "/static/media/frames/lich.svg",
+          "caption": "The Lich of Mount Caelum",
+          "show_ornate_border": true
+        },
+        "table": {
+          "id": "flooded_crypt",
+          "title": "Flooded Crypt",
+          "type": "map",
+          "src": "/static/media/tables/crypt.svg",
+          "grid_enabled": true,
+          "grid_size": 60,
+          "grid_color": "rgba(100, 200, 255, 0.4)",
+          "roll20_url": ""
+        }
+      }
+    },
+    {
+      "id": "tavern",
+      "name": "The Hearthside Tavern",
+      "icon": "beer",
+      "description": "Warm crackling fireplace, bustling village sunset, and ale by the barrel.",
+      "lighting": {
+        "power": true,
+        "brightness": 85,
+        "color": "#F97316",
+        "effect": "fire"
+      },
+      "displays": {
+        "window": {
+          "id": "tavern_town",
+          "title": "Village Sunset",
+          "type": "canvas_effect",
+          "effect_type": "sunset_town",
+          "src": "",
+          "show_mullions": true
+        },
+        "frame": {
+          "id": "barkeep",
+          "title": "Barnaby the Barkeep",
+          "type": "portrait",
+          "src": "/static/media/frames/barkeep.svg",
+          "caption": "Proprietor of The Drunken Dragon",
+          "show_ornate_border": true
+        },
+        "table": {
+          "id": "tavern_floor",
+          "title": "Tavern Main Hall",
+          "type": "map",
+          "src": "/static/media/tables/tavern.svg",
+          "grid_enabled": true,
+          "grid_size": 60,
+          "grid_color": "rgba(255, 230, 150, 0.4)",
+          "roll20_url": ""
+        }
+      }
+    },
+    {
+      "id": "dungeon",
+      "name": "Sunken Dungeon Crypt",
+      "icon": "skull",
+      "description": "Eerie sickly torchlight, cold stone corridors, and rattling chains.",
+      "lighting": {
+        "power": true,
+        "brightness": 35,
+        "color": "#10B981",
+        "effect": "candle_flicker"
+      },
+      "displays": {
+        "window": {
+          "id": "dungeon_bars",
+          "title": "Iron Portcullis",
+          "type": "canvas_effect",
+          "effect_type": "dungeon_cell",
+          "src": "",
+          "show_mullions": true
+        },
+        "frame": {
+          "id": "skeleton",
+          "title": "Crypt Guardian",
+          "type": "portrait",
+          "src": "/static/media/frames/skeleton.svg",
+          "caption": "Cursed to guard the sepulcher",
+          "show_ornate_border": true
+        },
+        "table": {
+          "id": "stone_crypt",
+          "title": "The Wayfarer Tavern",
+          "type": "map",
+          "src": "/static/media/tables/tavern.svg",
+          "grid_enabled": false,
+          "grid_size": 60,
+          "grid_color": "rgba(100, 255, 100, 0.3)",
+          "roll20_url": ""
+        }
+      }
+    },
+    {
+      "id": "combat",
+      "name": "Dragon's Wrath / Combat Alert",
+      "icon": "flame",
+      "description": "Pulsing crimson battle lighting, burning skies, and tactical arena grid.",
+      "lighting": {
+        "power": true,
+        "brightness": 100,
+        "color": "#EF4444",
+        "effect": "pulsing"
+      },
+      "displays": {
+        "window": {
+          "id": "burning_sky",
+          "title": "Inferno Skies",
+          "type": "canvas_effect",
+          "effect_type": "fire_sky",
+          "src": "",
+          "show_mullions": true
+        },
+        "frame": {
+          "id": "dragon",
+          "title": "Vermithrax the Red",
+          "type": "portrait",
+          "src": "/static/media/frames/dragon.svg",
+          "caption": "Scourge of the Ashen Peaks",
+          "show_ornate_border": true
+        },
+        "table": {
+          "id": "volcano_arena",
+          "title": "Volcanic Caldera",
+          "type": "map",
+          "src": "/static/media/tables/volcano.svg",
+          "grid_enabled": true,
+          "grid_size": 60,
+          "grid_color": "rgba(255, 60, 60, 0.6)",
+          "roll20_url": ""
+        }
+      }
+    },
+    {
+      "id": "feywild",
+      "name": "The Feywild Twilight",
+      "icon": "sparkles",
+      "description": "Shifting mystical violet lights, floating willow-wisps, and enchanted woods.",
+      "lighting": {
+        "power": true,
+        "brightness": 60,
+        "color": "#A855F7",
+        "effect": "none"
+      },
+      "displays": {
+        "window": {
+          "id": "fey_forest",
+          "title": "Enchanted Woods",
+          "type": "canvas_effect",
+          "effect_type": "fairy_wisps",
+          "src": "",
+          "show_mullions": true
+        },
+        "frame": {
+          "id": "fey_queen",
+          "title": "Queen Titania",
+          "type": "portrait",
+          "src": "/static/media/frames/fey.svg",
+          "caption": "Ruler of the Summer Court",
+          "show_ornate_border": true
+        },
+        "table": {
+          "id": "forest_crossing",
+          "title": "Fey Crossroads",
+          "type": "map",
+          "src": "/static/media/tables/forest.svg",
+          "grid_enabled": true,
+          "grid_size": 60,
+          "grid_color": "rgba(220, 150, 255, 0.4)",
+          "roll20_url": ""
+        }
+      }
+    },
+    {
+      "id": "blackout",
+      "name": "Total Darkness / Stealth",
+      "icon": "moon",
+      "description": "All lights extinguish instantly, darkness cloaks the chamber.",
+      "lighting": {
+        "power": false,
+        "brightness": 0,
+        "color": "#000000",
+        "effect": "none"
+      },
+      "displays": {
+        "window": {
+          "id": "pitch_black",
+          "title": "Void of Night",
+          "type": "canvas_effect",
+          "effect_type": "night_stars",
+          "src": "",
+          "show_mullions": true
+        },
+        "frame": {
+          "id": "empty",
+          "title": "Shadows",
+          "type": "portrait",
+          "src": "/static/media/frames/shadows.svg",
+          "caption": "Only darkness stares back",
+          "show_ornate_border": true
+        },
+        "table": {
+          "id": "fog_of_war",
+          "title": "Shroud of Mystery",
+          "type": "map",
+          "src": "/static/media/tables/fog.svg",
+          "grid_enabled": false,
+          "grid_size": 60,
+          "grid_color": "rgba(255, 255, 255, 0.2)",
+          "roll20_url": ""
+        }
+      }
+    }
+  ]
+}

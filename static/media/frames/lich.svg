@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000" width="100%" height="100%">
+  <defs>
+    <radialGradient id="lichBg" cx="50%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#1E3A8A" />
+      <stop offset="60%" stop-color="#0F172A" />
+      <stop offset="100%" stop-color="#020617" />
+    </radialGradient>
+    <filter id="iceGlow">
+      <feGaussianBlur stdDeviation="10" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <rect width="800" height="1000" fill="url(#lichBg)" />
+
+  <!-- Shroud & Hood -->
+  <path d="M 180 980 C 190 700 230 460 300 220 C 350 140 450 140 500 220 C 570 460 610 700 620 980 Z" fill="#0B132B" stroke="#1D4ED8" stroke-width="3" />
+  
+  <!-- Crown of Spikes -->
+  <polygon points="340,190 320,80 370,160 400,40 430,160 480,80 460,190" fill="#1E293B" stroke="#60A5FA" stroke-width="4" />
+
+  <!-- Skull Head -->
+  <path d="M 330 280 C 330 200 470 200 470 280 C 470 330 450 360 450 400 C 430 420 370 420 350 400 C 350 360 330 330 330 280 Z" fill="#E2E8F0" />
+  
+  <!-- Eye Sockets with Cyan Ice Glow -->
+  <ellipse cx="365" cy="275" rx="22" ry="26" fill="#020617" />
+  <ellipse cx="435" cy="275" rx="22" ry="26" fill="#020617" />
+  <circle cx="365" cy="275" r="8" fill="#38BDF8" filter="url(#iceGlow)" />
+  <circle cx="435" cy="275" r="8" fill="#38BDF8" filter="url(#iceGlow)" />
+  <circle cx="365" cy="275" r="3" fill="#FFFFFF" />
+  <circle cx="435" cy="275" r="3" fill="#FFFFFF" />
+
+  <!-- Nose Cavity -->
+  <polygon points="400,310 390,340 410,340" fill="#0F172A" />
+
+  <!-- Teeth / Jaw -->
+  <g fill="#CBD5E1" stroke="#0F172A" stroke-width="2">
+    <rect x="365" y="380" width="12" height="22" rx="3" />
+    <rect x="379" y="380" width="12" height="25" rx="3" />
+    <rect x="393" y="380" width="14" height="26" rx="3" />
+    <rect x="409" y="380" width="12" height="25" rx="3" />
+    <rect x="423" y="380" width="12" height="22" rx="3" />
+  </g>
+
+  <!-- Frost Mist -->
+  <path d="M 200 950 Q 300 800 400 920 Q 500 780 600 950" stroke="#38BDF8" stroke-width="15" fill="none" opacity="0.3" filter="url(#iceGlow)" />
+
+  <g transform="translate(150, 910)">
+    <rect x="0" y="0" width="500" height="60" rx="8" fill="#0F172A" stroke="#38BDF8" stroke-width="3" />
+    <text x="250" y="38" font-family="Cinzel, Georgia, serif" font-size="24" font-weight="bold" fill="#BAE6FD" text-anchor="middle" letter-spacing="3">LORD MALAKOR</text>
+  </g>
+</svg>

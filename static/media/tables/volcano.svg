@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" width="100%" height="100%">
+  <defs>
+    <radialGradient id="lavaGrad" cx="50%" cy="50%" r="60%">
+      <stop offset="0%" stop-color="#FF3B30" />
+      <stop offset="60%" stop-color="#FF9500" />
+      <stop offset="100%" stop-color="#7F1D1D" />
+    </radialGradient>
+    <filter id="lavaGlow">
+      <feGaussianBlur stdDeviation="10" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Dark Obsidian Stone Base -->
+  <rect width="1200" height="800" fill="#1C1917" />
+
+  <!-- Flowing Lava Rivers -->
+  <path d="M 0 350 Q 300 200 600 400 T 1200 350 L 1200 480 Q 900 650 600 480 T 0 520 Z" fill="url(#lavaGrad)" filter="url(#lavaGlow)" />
+  <path d="M 400 0 Q 450 300 600 400 T 800 800 L 700 800 Q 550 500 400 300 T 300 0 Z" fill="url(#lavaGrad)" filter="url(#lavaGlow)" />
+
+  <!-- Craggy Obsidian Stepping Stones / Islands -->
+  <!-- Main Center Boss Arena Platform -->
+  <polygon points="520,320 680,310 740,460 630,550 480,480 470,380" fill="#292524" stroke="#44403C" stroke-width="8" />
+  <polygon points="540,340 660,330 710,450 620,520 500,460 490,380" fill="#1C1917" stroke="#EA580C" stroke-width="2" />
+
+  <!-- Left Platform -->
+  <polygon points="120,200 280,180 320,320 220,380 100,320" fill="#292524" stroke="#44403C" stroke-width="6" />
+
+  <!-- Right Platform -->
+  <polygon points="880,240 1060,200 1100,360 980,420 860,340" fill="#292524" stroke="#44403C" stroke-width="6" />
+
+  <!-- Bottom Left Platform -->
+  <polygon points="180,580 320,540 360,680 260,750 140,680" fill="#292524" stroke="#44403C" stroke-width="6" />
+
+  <!-- Bottom Right Platform -->
+  <polygon points="820,560 980,520 1040,660 940,740 800,680" fill="#292524" stroke="#44403C" stroke-width="6" />
+</svg>

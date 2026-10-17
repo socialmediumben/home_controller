@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000" width="100%" height="100%">
+  <defs>
+    <radialGradient id="tavBg" cx="50%" cy="40%" r="65%">
+      <stop offset="0%" stop-color="#78350F" />
+      <stop offset="60%" stop-color="#451A03" />
+      <stop offset="100%" stop-color="#1C0A00" />
+    </radialGradient>
+  </defs>
+
+  <rect width="800" height="1000" fill="url(#tavBg)" />
+
+  <!-- Tavern Wooden Wall -->
+  <line x1="0" y1="200" x2="800" y2="200" stroke="#291102" stroke-width="6" />
+  <line x1="0" y1="400" x2="800" y2="400" stroke="#291102" stroke-width="6" />
+  <line x1="0" y1="600" x2="800" y2="600" stroke="#291102" stroke-width="6" />
+
+  <!-- Barkeep Body & Apron -->
+  <ellipse cx="400" cy="850" rx="260" ry="220" fill="#78350F" />
+  <path d="M 270 650 L 530 650 L 510 980 L 290 980 Z" fill="#FDE68A" stroke="#B45309" stroke-width="4" />
+  <rect x="330" y="700" width="140" height="90" rx="8" fill="#FCD34D" stroke="#B45309" stroke-width="3" />
+
+  <!-- Head & Cheerful Face -->
+  <circle cx="400" cy="380" r="130" fill="#FED7AA" />
+  <!-- Rosy Cheeks -->
+  <circle cx="330" cy="400" r="28" fill="#FB923C" opacity="0.4" />
+  <circle cx="470" cy="400" r="28" fill="#FB923C" opacity="0.4" />
+
+  <!-- Brown Bushy Mustache -->
+  <path d="M 400 410 C 350 370 280 430 330 460 C 370 450 400 420 400 420 C 400 420 430 450 470 460 C 520 430 450 370 400 410 Z" fill="#78350F" />
+  <!-- Round Bulbous Nose -->
+  <circle cx="400" cy="385" r="26" fill="#FDBA74" stroke="#EA580C" stroke-width="2" />
+
+  <!-- Winking / Jolly Eyes -->
+  <path d="M 330 350 Q 350 340 370 350" stroke="#451A03" stroke-width="6" stroke-linecap="round" fill="none" />
+  <circle cx="450" cy="350" r="10" fill="#451A03" />
+
+  <!-- Balding Hair Fringe -->
+  <path d="M 270 360 C 260 270 330 240 400 240 C 470 240 540 270 530 360 C 510 320 460 270 400 270 C 340 270 290 320 270 360 Z" fill="#78350F" />
+
+  <!-- Foaming Ale Flagon -->
+  <g transform="translate(140, 680)">
+    <rect x="0" y="40" width="120" height="180" rx="12" fill="#713F12" stroke="#FEF08A" stroke-width="4" />
+    <path d="M 120 70 C 180 70 180 170 120 170" fill="none" stroke="#FEF08A" stroke-width="12" stroke-linecap="round" />
+    <!-- Foam -->
+    <ellipse cx="60" cy="40" rx="70" ry="25" fill="#FFFFFF" />
+    <circle cx="20" cy="40" r="20" fill="#FFFFFF" />
+    <circle cx="60" cy="30" r="24" fill="#FFFFFF" />
+    <circle cx="100" cy="40" r="20" fill="#FFFFFF" />
+  </g>
+
+  <g transform="translate(150, 910)">
+    <rect x="0" y="0" width="500" height="60" rx="8" fill="#451A03" stroke="#F59E0B" stroke-width="3" />
+    <text x="250" y="38" font-family="Cinzel, Georgia, serif" font-size="24" font-weight="bold" fill="#FDE68A" text-anchor="middle" letter-spacing="3">BARNABY THE BARKEEP</text>
+  </g>
+</svg>

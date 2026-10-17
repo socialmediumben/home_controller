@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>The Archmage's Grimoire v1.2.5</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.ico">
+  <link rel="stylesheet" href="/static/css/spellbook.css?v=1.2.5">
+  <style>
+    .version-badge {
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 12px;
+      background: rgba(212, 163, 75, 0.2);
+      border: 1px solid var(--gold-accent);
+      color: var(--gold-accent);
+      font-family: monospace;
+      letter-spacing: 1px;
+    }
+
+    .peer-status-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      background: rgba(20, 14, 8, 0.9);
+      border: 1px solid rgba(180, 130, 57, 0.3);
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-size: 12px;
+      color: var(--text-muted);
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .peer-item strong.online {
+      color: #10b981;
+    }
+
+    .peer-item strong.offline {
+      color: #71717a;
+    }
+  </style>
+</head>
+<body>
+  <div class="grimoire-app">
+    <!-- Header -->
+    <header class="spellbook-header">
+      <div class="title-group">
+        <span class="tome-icon">📜</span>
+        <div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <h1 class="book-title">THE WIZARD'S GRIMOIRE</h1>
+            <span id="versionBadge" class="version-badge">v1.2.5 Connecting...</span>
+          </div>
+          <div class="subtitle">Game Room & Display Controller</div>
+        </div>
+      </div>
+
+      <div class="header-status">
+        <div class="active-scene-badge">
+          <div id="statusGem" class="status-gem disconnected"></div>
+          <span id="activeSceneName">Loading Chamber...</span>
+        </div>
+
+        <div class="quick-toggles">
+          <button id="modeToggleBtn" class="grimoire-btn" onclick="toggleDevMode()" title="Toggle Developer / User Mode">
+            🗝️ User Mode
+          </button>
+          <button id="blackoutBtn" class="grimoire-btn danger" title="Extinguish all lights and dim screens">
+            🌑 Blackout
+          </button>
+          <button id="settingsBtn" class="grimoire-btn dev-only" title="Configure Hubspace / Smart Lights">
+            ⚙️ Settings
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Connected Displays Status Bar -->
+    <div class="peer-status-bar" id="peerStatusBar">
+      <span class="peer-item">🪟 Window TV: <strong id="peerWindowStatus" class="offline">Offline</strong></span>
+      <span class="peer-item">🖼️ Picture Frame: <strong id="peerFrameStatus" class="offline">Offline</strong></span>
+      <span class="peer-item">🗺️ Table Projector: <strong id="peerTableStatus" class="offline">Offline</strong></span>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <nav class="grimoire-tabs">
+      <button class="tab-btn active" data-tab="tabScenes">
+        ✨ Arcane Presets
+      </button>
+      <button class="tab-btn" data-tab="tabDisplays">
+        🔮 Screen Overrides
+      </button>
+      <button class="tab-btn" data-tab="tabLighting">
+        🕯️ Chamber Lights
+      </button>
+    </nav>
+
+    <!-- Tab 1: Presets -->
+    <main id="tabScenes" class="tab-content active">
+      <div class="dev-only" style="display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap;">
+        <button class="grimoire-btn" onclick="openPresetEditorModal()" style="border-color: #ffd700; color: #ffd700; font-weight: bold;">
+          ✨ + Create Arcane Preset
+        </button>
+        <button class="grimoire-btn" onclick="openMediaUploadModal()" style="border-color: #38bdf8; color: #38bdf8; font-weight: bold;">
+          📁 Upload Custom Art / Map
+        </button>
+      </div>
+      <div class="scenes-grid" id="scenesContainer">
+        <!-- Scene cards rendered dynamically via JS -->
+      </div>
+    </main>
+
+    <!-- Tab 2: Individual Screen Overrides -->
+    <main id="tabDisplays" class="tab-content">
+      <div class="screens-grid">
+        <!-- 1. Window TV -->
+        <div class="screen-box">
+          <div class="screen-box-title">
+            <span>🪟 53" Window TV</span>
+            <label style="font-size: 11px; cursor: pointer;">
+              <input type="checkbox" id="windowMullionsCheck" checked> Gothic Mullions
+            </label>
+          </div>
+          <div class="screen-preview-container">
+            <span id="windowPreviewText" style="color: #b8a68b; font-size: 13px;">Syncing with Window...</span>
+          </div>
+          <div class="preset-options-list">
+            <div class="option-item" onclick="setWindowEffect('rain_storm', 'Rain on Castle Glass')">
+              <span>🌧️ Rainy Castle Window</span>
+              <span class="mini-badge">Storm</span>
+            </div>
+            <div class="option-item" onclick="setWindowEffect('heavy_storm', 'Midnight Tempest')">
+              <span>⚡ Lightning Tempest</span>
+              <span class="mini-badge">Thunder</span>
+            </div>
+            <div class="option-item" onclick="setWindowEffect('sunset_town', 'Village Sunset')">
+              <span>🌇 Tavern Village Sunset</span>
+              <span class="mini-badge">Warm</span>
+            </div>
+            <div class="option-item" onclick="setWindowEffect('fairy_wisps', 'Enchanted Woods')">
+              <span>🧚 Feywild Willow-Wisps</span>
+              <span class="mini-badge">Magic</span>
+            </div>
+            <div class="option-item" onclick="setWindowEffect('fire_sky', 'Inferno Volcano Skies')">
+              <span>🔥 Volcanic Smolder & Embers</span>
+              <span class="mini-badge">Inferno</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Picture Frame Monitor -->
+        <div class="screen-box">
+          <div class="screen-box-title">
+            <span>🖼️ Picture Frame</span>
+            <label style="font-size: 11px; cursor: pointer;">
+              <input type="checkbox" id="frameOrnateCheck" checked> Gilded Frame
+            </label>
+          </div>
+          <div class="screen-preview-container">
+            <img id="framePreviewImg" src="" alt="Portrait" style="display: none;">
+            <span id="framePreviewPlaceholder" style="color: #b8a68b; font-size: 13px;">Syncing with Frame...</span>
+          </div>
+          <div class="preset-options-list">
+            <div class="option-item" onclick="setFramePortrait('/static/media/frames/archmage.svg', 'Archmage Ignis', 'Grand Conjurer')">
+              <span>🧙 Archmage Ignis</span>
+              <span class="mini-badge">Wizard</span>
+            </div>
+            <div class="option-item" onclick="setFramePortrait('/static/media/frames/barkeep.svg', 'Barnaby the Barkeep', 'The Drunken Dragon')">
+              <span>🍺 Barnaby the Barkeep</span>
+              <span class="mini-badge">Tavern</span>
+            </div>
+            <div class="option-item" onclick="setFramePortrait('/static/media/frames/lich.svg', 'Lord Malakor', 'The Lich of Mount Caelum')">
+              <span>💀 Lord Malakor (Lich)</span>
+              <span class="mini-badge">Undead</span>
+            </div>
+            <div class="option-item" onclick="setFramePortrait('/static/media/frames/skeleton.svg', 'Crypt Guardian', 'Sepulcher Sentry')">
+              <span>⚔️ Crypt Guardian</span>
+              <span class="mini-badge">Monster</span>
+            </div>
+            <div class="option-item" onclick="setFramePortrait('/static/media/frames/dragon.svg', 'Vermithrax the Red', 'Ancient Red Dragon')">
+              <span>🐉 Vermithrax the Red</span>
+              <span class="mini-badge">Boss</span>
+            </div>
+            <div class="option-item" onclick="setFramePortrait('/static/media/frames/fey.svg', 'Queen Titania', 'Summer Court')">
+              <span>🌸 Queen Titania</span>
+              <span class="mini-badge">Fey</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Tabletop Projector -->
+        <div class="screen-box">
+          <div class="screen-box-title">
+            <span>🗺️ Tabletop Projector</span>
+            <label style="font-size: 11px; cursor: pointer;">
+              <input type="checkbox" id="tableGridCheck" checked> Tactical Grid
+            </label>
+          </div>
+          <div class="screen-preview-container">
+            <img id="tablePreviewImg" src="" alt="Battlemap" style="display: none;">
+            <span id="tablePreviewPlaceholder" style="color: #b8a68b; font-size: 13px;">Syncing with Table...</span>
+          </div>
+          <div class="preset-options-list">
+            <div class="option-item" onclick="setTableMap('/static/media/tables/library.svg', 'The Arcane Library')">
+              <span>📚 The Arcane Library</span>
+              <span class="mini-badge">Study</span>
+            </div>
+            <div class="option-item" onclick="setTableMap('/static/media/tables/tavern.svg', 'The Wayfarer Tavern')">
+              <span>🍻 Tavern Main Hall</span>
+              <span class="mini-badge">Social</span>
+            </div>
+            <div class="option-item" onclick="setTableMap('/static/media/tables/crypt.svg', 'Tomb of the Kings')">
+              <span>🪦 Stone Crypt Corridors</span>
+              <span class="mini-badge">Dungeon</span>
+            </div>
+            <div class="option-item" onclick="setTableMap('/static/media/tables/volcano.svg', 'Volcanic Caldera')">
+              <span>🌋 Volcanic Arena</span>
+              <span class="mini-badge">Combat</span>
+            </div>
+            <div class="option-item" onclick="setTableMap('/static/media/tables/forest.svg', 'Fey Crossroads')">
+              <span>🌲 Forest Crossroads</span>
+              <span class="mini-badge">Wilderness</span>
+            </div>
+            <div class="option-item" onclick="openRoll20Modal()">
+              <span>🎲 Launch Roll20 Web Embed</span>
+              <span class="mini-badge">VTT</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Tab 3: Chamber Lighting -->
+    <main id="tabLighting" class="tab-content">
+      <!-- Master Chamber Lighting Controls -->
+      <div class="lighting-deck">
+        <!-- Visual Bulb Preview & Master Switch -->
+        <div class="light-panel">
+          <div class="panel-title">Master Chamber Illumination</div>
+          <div class="bulb-display">
+            <div id="virtualOrb" class="virtual-orb">🕯️</div>
+          </div>
+          <div style="display: flex; gap: 10px; margin-top: 8px;">
+            <button id="lightToggleBtn" class="grimoire-btn" style="flex: 1; justify-content: center;">
+              💡 Toggle Power (ON)
+            </button>
+          </div>
+          <div class="slider-group" style="margin-top: 8px;">
+            <div class="slider-label">
+              <span>Master Brightness</span>
+              <span id="brightVal">65%</span>
+            </div>
+            <input type="range" id="brightSlider" min="0" max="100" value="65">
+          </div>
+        </div>
+
+        <!-- Color Palette -->
+        <div class="light-panel">
+          <div class="panel-title">Atmospheric Colors</div>
+          <div class="swatch-grid">
+            <button class="swatch-btn" style="background: #FF9E3B;" onclick="setColor('#FF9E3B')">Candle</button>
+            <button class="swatch-btn" style="background: #F97316;" onclick="setColor('#F97316')">Hearth</button>
+            <button class="swatch-btn" style="background: #EF4444;" onclick="setColor('#EF4444')">Blood</button>
+            <button class="swatch-btn" style="background: #3B82F6;" onclick="setColor('#3B82F6')">Storm</button>
+            <button class="swatch-btn" style="background: #A855F7;" onclick="setColor('#A855F7')">Arcane</button>
+            <button class="swatch-btn" style="background: #10B981;" onclick="setColor('#10B981')">Crypt</button>
+            <button class="swatch-btn" style="background: #FDE047; color: #332;" onclick="setColor('#FDE047')">Torch</button>
+            <button class="swatch-btn" style="background: #FFFFFF; color: #111;" onclick="setColor('#FFFFFF')">Daylight</button>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px; margin-top: 8px;">
+            <label style="font-size: 13px; color: var(--text-muted);">Custom Color:</label>
+            <input type="color" id="customColorPicker" value="#FF9E3B" style="background: none; border: none; width: 44px; height: 36px; cursor: pointer;">
+          </div>
+        </div>
+
+        <!-- Special Lighting FX -->
+        <div class="light-panel">
+          <div class="panel-title">Dynamic Lighting Spells</div>
+          <div class="fx-grid">
+            <button class="fx-btn" id="fxCandle" onclick="setEffect('candle_flicker')">
+              <span>🕯️</span> Candle Flicker
+            </button>
+            <button class="fx-btn" id="fxLightning" onclick="setEffect('lightning')">
+              <span>⚡</span> Storm Lightning
+            </button>
+            <button class="fx-btn" id="fxFire" onclick="setEffect('fire')">
+              <span>🔥</span> Hearth Fire
+            </button>
+            <button class="fx-btn" id="fxPulse" onclick="setEffect('pulsing')">
+              <span>🩸</span> Combat Pulse
+            </button>
+            <button class="fx-btn" id="fxNone" onclick="setEffect('none')" style="grid-column: span 2;">
+              <span>✨</span> Steady Glow (No FX)
+            </button>
+          </div>
+          <div id="hubspaceStatusBadge" style="margin-top: 10px; font-size: 11px; color: var(--text-muted); padding: 8px; background: rgba(0,0,0,0.4); border-radius: 6px;">
+            Status: Simulator Mode Active (Virtual Lights)
+          </div>
+        </div>
+      </div>
+
+      <!-- Discovered Hubspace Devices List -->
+      <div class="devices-container" id="hubspaceDevicesSection" style="margin-top: 18px;">
+        <div class="devices-section-header">
+          <span>🏰 Discovered Hubspace Devices (<span id="devicesCountLabel">0</span>)</span>
+          <div style="display: flex; gap: 8px;">
+            <button class="grimoire-btn" onclick="toggleAllDevices(true)" style="padding: 4px 10px; font-size: 11px;">
+              💡 Turn All ON
+            </button>
+            <button class="grimoire-btn danger" onclick="toggleAllDevices(false)" style="padding: 4px 10px; font-size: 11px;">
+              🌑 Turn All OFF
+            </button>
+          </div>
+        </div>
+        <div class="devices-grid" id="devicesGrid">
+          <!-- Dynamically rendered Hubspace device cards -->
+        </div>
+      </div>
+    </main>
+
+    <!-- Settings Modal: Hubspace & Game Room/Scene Filtering -->
+    <div id="settingsModal" class="modal-overlay">
+      <div class="modal-box">
+        <div class="modal-header">
+          <div class="modal-title">🏰 Game Room & Hubspace Setup</div>
+          <button class="modal-close" onclick="closeSettingsModal()">✕</button>
+        </div>
+        <p style="font-size: 13px; color: var(--text-muted); line-height: 1.4; margin: 0;">
+          Configure your Home Depot Hubspace connection and choose which rooms, lights, and scenes are active in your wizard's study.
+        </p>
+
+        <!-- 1. Hubspace Account Credentials Section -->
+        <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--panel-border); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 8px;">
+          <div style="font-family: 'Cinzel', serif; font-size: 14px; color: var(--gold-accent);">
+            🔑 Hubspace Account
+          </div>
+          <div class="form-group">
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #fff;">
+              <input type="checkbox" id="hubspaceEnableCheck"> Enable Hubspace Cloud Connection
+            </label>
+          </div>
+          <div class="form-group">
+            <label>Hubspace Email / Username:</label>
+            <input type="text" id="hubspaceUser" placeholder="your-email@example.com">
+          </div>
+          <div class="form-group">
+            <label>Hubspace Password:</label>
+            <input type="password" id="hubspacePass" placeholder="••••••••">
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px;">
+            <span id="hubspaceConnectStatus" style="font-size: 11px; color: var(--text-muted);">Simulator Active</span>
+            <button class="grimoire-btn" style="padding: 6px 14px; font-size: 12px;" onclick="saveHubspaceSettings()">
+              🔄 Connect & Scan
+            </button>
+          </div>
+        </div>
+
+        <!-- 2. Room & Device Selection Section (Game Room Filter) -->
+        <div id="gameRoomFilterSection" style="background: rgba(0,0,0,0.3); border: 1px solid var(--panel-border); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 10px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="font-family: 'Cinzel', serif; font-size: 14px; color: var(--gold-accent);">
+              💡 Game Room Lights & Fixtures
+            </div>
+            <div style="display: flex; gap: 6px;">
+              <button class="grimoire-btn" style="padding: 3px 8px; font-size: 10px;" onclick="selectAllDevicesFilter(true)">Select All</button>
+              <button class="grimoire-btn" style="padding: 3px 8px; font-size: 10px;" onclick="selectAllDevicesFilter(false)">Clear</button>
+            </div>
+          </div>
+          <p style="font-size: 11px; color: var(--text-muted); margin: 0;">
+            Select only the fixtures in your game room. Unselected lights across your house will never be triggered by this spellbook.
+          </p>
+
+          <!-- Discovered Rooms -->
+          <div style="font-size: 12px; color: var(--gold-accent); font-weight: bold;">Filter By Room:</div>
+          <div id="roomsSelectorGrid" style="display: flex; flex-wrap: wrap; gap: 6px;">
+            <!-- Populated dynamically -->
+          </div>
+
+          <!-- Individual Fixtures Checkboxes -->
+          <div style="font-size: 12px; color: var(--gold-accent); font-weight: bold; margin-top: 4px;">Individual Fixtures:</div>
+          <div id="devicesSelectorGrid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; max-height: 180px; overflow-y: auto; padding-right: 4px;">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+
+        <!-- 3. Grimoire Atmospheric Scenes Filter Section -->
+        <div id="scenesFilterSection" style="background: rgba(0,0,0,0.3); border: 1px solid var(--panel-border); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 8px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="font-family: 'Cinzel', serif; font-size: 14px; color: var(--gold-accent);">
+              📜 Active Grimoire Scenes
+            </div>
+            <div style="display: flex; gap: 6px;">
+              <button class="grimoire-btn" style="padding: 3px 8px; font-size: 10px;" onclick="selectAllScenesFilter(true)">Select All</button>
+              <button class="grimoire-btn" style="padding: 3px 8px; font-size: 10px;" onclick="selectAllScenesFilter(false)">Clear</button>
+            </div>
+          </div>
+          <p style="font-size: 11px; color: var(--text-muted); margin: 0;">
+            Choose which atmospheric scene cards appear on your spellbook home tab.
+          </p>
+          <div id="scenesSelectorGrid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+
+        <!-- Footer Actions -->
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 6px;">
+          <button class="grimoire-btn" onclick="closeSettingsModal()">Close</button>
+          <button class="grimoire-btn" style="background: var(--gold-accent); color: #1c150c; font-weight: bold;" onclick="saveAllSettingsAndFilters()">
+            💾 Save Room & Scene Filters
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Roll20 Embed Modal -->
+    <div id="roll20Modal" class="modal-overlay">
+      <div class="modal-box">
+        <div class="modal-header">
+          <div class="modal-title">Tabletop Roll20 VTT Embed</div>
+          <button class="modal-close" onclick="closeRoll20Modal()">✕</button>
+        </div>
+        <p style="font-size: 13px; color: var(--text-muted);">
+          Enter your Roll20 game player link to project it directly onto your table projector.
+        </p>
+        <div class="form-group">
+          <label>Roll20 Campaign URL:</label>
+          <input type="text" id="roll20UrlInput" placeholder="https://app.roll20.net/editor/...">
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px;">
+          <button class="grimoire-btn" onclick="closeRoll20Modal()">Cancel</button>
+          <button class="grimoire-btn" style="background: var(--gold-accent); color: #1c150c;" onclick="confirmRoll20()">
+            Project Roll20 to Table
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Arcane Preset Editor Modal (Developer Mode) -->
+    <div id="presetEditorModal" class="modal-overlay">
+      <div class="modal-box" style="max-width: 650px; max-height: 90vh; overflow-y: auto;">
+        <div class="modal-header">
+          <div class="modal-title" id="presetEditorTitle">✨ Edit Arcane Preset</div>
+          <button class="modal-close" onclick="closePresetEditorModal()">✕</button>
+        </div>
+
+        <input type="hidden" id="editPresetId">
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div class="form-group">
+            <label>Preset Key / ID (lowercase, e.g. dungeon):</label>
+            <input type="text" id="presetKeyInput" placeholder="dungeon_boss">
+          </div>
+          <div class="form-group">
+            <label>Scene Title / Name:</label>
+            <input type="text" id="presetNameInput" placeholder="Lair of the Red Dragon">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Atmospheric Description:</label>
+          <input type="text" id="presetDescInput" placeholder="Flickering magma glow, distant roars, fiery cavern.">
+        </div>
+
+        <!-- Section: Lighting -->
+        <div class="settings-section">
+          <div class="settings-section-title">🕯️ Lighting Settings</div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; align-items: center;">
+            <div class="form-group">
+              <label>Light Color:</label>
+              <input type="color" id="presetLightColor" value="#ff9a3c" style="width: 100%; height: 38px; padding: 2px; cursor: pointer;">
+            </div>
+            <div class="form-group">
+              <label>Brightness: <span id="presetBrightVal">70</span>%</label>
+              <input type="range" id="presetBrightSlider" min="1" max="100" value="70" oninput="document.getElementById('presetBrightVal').textContent = this.value">
+            </div>
+            <div class="form-group">
+              <label>Light Effect:</label>
+              <select id="presetLightEffect" class="grimoire-select" style="width: 100%; padding: 8px; background: #23190f; color: #f5eedc; border: 1px solid #b48239; border-radius: 6px;">
+                <option value="none">Solid Color</option>
+                <option value="candle_flicker">Candle Flicker</option>
+                <option value="fireplace">Fireplace</option>
+                <option value="lightning_flash">Lightning Flash</option>
+                <option value="arcane_pulse">Arcane Pulse</option>
+                <option value="fey_shimmer">Fey Shimmer</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section: Window TV -->
+        <div class="settings-section">
+          <div class="settings-section-title">🪟 53" Window TV Atmospheric Scene</div>
+          <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 10px;">
+            <div class="form-group">
+              <label>Window Effect:</label>
+              <select id="presetWindowEffect" class="grimoire-select" style="width: 100%; padding: 8px; background: #23190f; color: #f5eedc; border: 1px solid #b48239; border-radius: 6px;">
+                <option value="rain_storm">🌧️ Rain Against Castle Glass</option>
+                <option value="heavy_storm">⚡ Midnight Thunderstorm</option>
+                <option value="sunset_town">🌇 Tavern Village Sunset</option>
+                <option value="fairy_wisps">🌸 Enchanted Fey Woods</option>
+                <option value="fireplace_glow">🔥 Roaring Great Hearth</option>
+                <option value="dungeon_cell">⛓️ Iron Portcullis & Cell</option>
+                <option value="starfield">✨ Astral Plane & Void</option>
+              </select>
+            </div>
+            <div class="form-group" style="display: flex; align-items: flex-end; padding-bottom: 8px;">
+              <label style="cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                <input type="checkbox" id="presetWindowMullions" checked> Gothic Mullions
+              </label>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Window Title:</label>
+            <input type="text" id="presetWindowTitle" placeholder="Rain Against Castle Glass">
+          </div>
+        </div>
+
+        <!-- Section: Picture Frame -->
+        <div class="settings-section">
+          <div class="settings-section-title">🖼️ Picture Frame Portrait / Art</div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div class="form-group">
+              <label>Frame Title:</label>
+              <input type="text" id="presetFrameTitle" placeholder="Archmage Valthor">
+            </div>
+            <div class="form-group">
+              <label>Frame Caption:</label>
+              <input type="text" id="presetFrameCaption" placeholder="Headmaster of the Arcane Academy">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Image Source (Path or Uploaded URL):</label>
+            <input type="text" id="presetFrameSrc" placeholder="/static/media/frames/archmage.svg">
+          </div>
+          <div class="form-group">
+            <label style="cursor: pointer; display: flex; align-items: center; gap: 6px;">
+              <input type="checkbox" id="presetFrameOrnate" checked> Ornate Golden Border
+            </label>
+          </div>
+        </div>
+
+        <!-- Section: Table Projector -->
+        <div class="settings-section">
+          <div class="settings-section-title">🗺️ Table Projector Battlemap</div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div class="form-group">
+              <label>Map Title:</label>
+              <input type="text" id="presetTableTitle" placeholder="The Arcane Library Vault">
+            </div>
+            <div class="form-group">
+              <label>Map Caption:</label>
+              <input type="text" id="presetTableCaption" placeholder="Catacombs beneath the tower">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Map Image Source (Path or Uploaded URL):</label>
+            <input type="text" id="presetTableSrc" placeholder="/static/media/tables/library.svg">
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: center;">
+            <label style="cursor: pointer; display: flex; align-items: center; gap: 6px;">
+              <input type="checkbox" id="presetTableGrid" checked> 1-Inch Tactical Grid
+            </label>
+            <div class="form-group" style="margin: 0;">
+              <label>Grid Size (px):</label>
+              <input type="number" id="presetTableGridSize" value="50" min="20" max="150">
+            </div>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 12px;">
+          <button class="grimoire-btn" onclick="closePresetEditorModal()">Cancel</button>
+          <button class="grimoire-btn" style="background: var(--gold-accent); color: #1c150c; font-weight: bold;" onclick="savePresetForm()">
+            💾 Save Preset
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Media Uploader Modal (Developer Mode) -->
+    <div id="mediaUploadModal" class="modal-overlay">
+      <div class="modal-box" style="max-width: 500px;">
+        <div class="modal-header">
+          <div class="modal-title">📁 Upload Custom Media</div>
+          <button class="modal-close" onclick="closeMediaUploadModal()">✕</button>
+        </div>
+        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px;">
+          Upload your own battlemaps, character portraits, NPC artwork, or images. They will be immediately accessible to your screens.
+        </p>
+        <div class="form-group">
+          <label>Select File (PNG, JPG, SVG, WebP, GIF, MP4):</label>
+          <input type="file" id="mediaUploadFileInput" accept="image/*,video/*">
+        </div>
+        <div id="uploadStatusMessage" style="font-size: 12px; margin-top: 6px; display: none;"></div>
+        <div id="uploadResultUrlContainer" style="display: none; margin-top: 10px; background: rgba(0,0,0,0.4); padding: 8px; border-radius: 6px; border: 1px dashed var(--gold-accent);">
+          <div style="font-size: 11px; color: var(--gold-accent);">File Uploaded Successfully! URL:</div>
+          <div id="uploadResultUrl" style="font-family: monospace; font-size: 12px; color: #38bdf8; word-break: break-all; margin: 4px 0;"></div>
+          <button class="grimoire-btn" style="padding: 3px 8px; font-size: 11px;" onclick="copyUploadedUrl()">📋 Copy URL</button>
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px;">
+          <button class="grimoire-btn" onclick="closeMediaUploadModal()">Close</button>
+          <button id="uploadSubmitBtn" class="grimoire-btn" style="background: var(--gold-accent); color: #1c150c; font-weight: bold;" onclick="submitMediaUpload()">
+            🚀 Upload File
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="/static/js/spellbook.js?v=1.2.5"></script>
+</body>
+</html>

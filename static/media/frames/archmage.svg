@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000" width="100%" height="100%">
+  <defs>
+    <radialGradient id="bgGrad" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#2D1B4E" />
+      <stop offset="70%" stop-color="#0F081D" />
+      <stop offset="100%" stop-color="#05020A" />
+    </radialGradient>
+    <radialGradient id="orbGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="30%" stop-color="#A78BFA" />
+      <stop offset="70%" stop-color="#7C3AED" stop-opacity="0.8" />
+      <stop offset="100%" stop-color="#4C1D95" stop-opacity="0" />
+    </radialGradient>
+    <filter id="magicGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="8" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <rect width="800" height="1000" fill="url(#bgGrad)" />
+
+  <!-- Constellations & Arcane Circles -->
+  <g opacity="0.25" stroke="#DDD6FE" stroke-width="1.5" fill="none">
+    <circle cx="400" cy="380" r="280" stroke-dasharray="6,4" />
+    <circle cx="400" cy="380" r="220" />
+    <polygon points="400,160 590,490 210,490" />
+    <polygon points="400,600 590,270 210,270" />
+  </g>
+
+  <!-- Robe Body -->
+  <path d="M 220 950 L 300 520 L 500 520 L 580 950 Z" fill="#1E1B4B" />
+  <path d="M 220 950 Q 400 970 580 950 L 540 560 Q 400 580 260 560 Z" fill="#312E81" />
+  <!-- Robe Gold Trim -->
+  <path d="M 375 540 L 375 960" stroke="#FBBF24" stroke-width="8" stroke-linecap="round" />
+  <path d="M 425 540 L 425 960" stroke="#FBBF24" stroke-width="8" stroke-linecap="round" />
+
+  <!-- Shoulders & Mantle -->
+  <path d="M 240 540 C 270 480 340 460 400 460 C 460 460 530 480 560 540 C 490 570 310 570 240 540 Z" fill="#4338CA" stroke="#FBBF24" stroke-width="3" />
+
+  <!-- Wizard Beard & Hair -->
+  <path d="M 290 320 C 270 450 320 620 400 680 C 480 620 530 450 510 320 Z" fill="#E2E8F0" />
+  <path d="M 310 350 C 330 480 360 580 400 640 C 440 580 470 480 490 350 Z" fill="#CBD5E1" />
+
+  <!-- Wizard Face -->
+  <ellipse cx="400" cy="320" rx="95" ry="115" fill="#E0BB95" />
+  <!-- Wrinkles -->
+  <path d="M 360 270 Q 400 260 440 270" stroke="#B48256" stroke-width="2" fill="none" />
+  <path d="M 370 280 Q 400 273 430 280" stroke="#B48256" stroke-width="2" fill="none" />
+  <!-- Nose -->
+  <path d="M 400 300 L 405 345 L 392 350 Z" fill="#C99B70" />
+
+  <!-- Eyebrows -->
+  <path d="M 340 295 Q 375 285 390 305" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round" fill="none" />
+  <path d="M 460 295 Q 425 285 410 305" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round" fill="none" />
+
+  <!-- Glowing Arcane Eyes -->
+  <ellipse cx="370" cy="312" rx="10" ry="6" fill="#67E8F9" filter="url(#magicGlow)" />
+  <ellipse cx="430" cy="312" rx="10" ry="6" fill="#67E8F9" filter="url(#magicGlow)" />
+  <circle cx="370" cy="312" r="3" fill="#FFFFFF" />
+  <circle cx="430" cy="312" r="3" fill="#FFFFFF" />
+
+  <!-- Wizard Hat -->
+  <ellipse cx="400" cy="245" rx="190" ry="45" fill="#1E1B4B" stroke="#FBBF24" stroke-width="4" />
+  <path d="M 280 235 Q 360 140 400 40 Q 430 110 520 235 Z" fill="#312E81" />
+  <!-- Hat Fold & Buckle -->
+  <path d="M 320 220 C 370 210 430 210 480 220" stroke="#FBBF24" stroke-width="12" fill="none" />
+  <rect x="385" y="210" width="30" height="24" rx="4" fill="none" stroke="#FEF08A" stroke-width="4" />
+
+  <!-- Floating Arcane Orb -->
+  <circle cx="600" cy="560" r="75" fill="url(#orbGlow)" filter="url(#magicGlow)" />
+  <circle cx="585" cy="545" r="18" fill="#FFFFFF" opacity="0.8" />
+  <g stroke="#C4B5FD" stroke-width="2" fill="none" opacity="0.7">
+    <ellipse cx="600" cy="560" rx="90" ry="30" transform="rotate(25 600 560)" />
+    <ellipse cx="600" cy="560" rx="90" ry="30" transform="rotate(-35 600 560)" />
+  </g>
+
+  <!-- Name Banner Plate -->
+  <g transform="translate(150, 910)">
+    <rect x="0" y="0" width="500" height="60" rx="8" fill="#18181B" stroke="#D97706" stroke-width="3" />
+    <text x="250" y="38" font-family="Cinzel, Georgia, serif" font-size="24" font-weight="bold" fill="#FDE68A" text-anchor="middle" letter-spacing="3">ARCHMAGE IGNIS</text>
+  </g>
+</svg>

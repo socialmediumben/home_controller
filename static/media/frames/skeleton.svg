@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000" width="100%" height="100%">
+  <defs>
+    <radialGradient id="skelBg" cx="50%" cy="40%" r="65%">
+      <stop offset="0%" stop-color="#064E3B" />
+      <stop offset="60%" stop-color="#022C22" />
+      <stop offset="100%" stop-color="#01140F" />
+    </radialGradient>
+    <filter id="greenGlow">
+      <feGaussianBlur stdDeviation="8" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <rect width="800" height="1000" fill="url(#skelBg)" />
+
+  <!-- Rusty Armor Shoulders -->
+  <path d="M 180 950 L 260 550 L 540 550 L 620 950 Z" fill="#374151" stroke="#4B5563" stroke-width="6" />
+  <circle cx="280" cy="570" r="16" fill="#9CA3AF" />
+  <circle cx="520" cy="570" r="16" fill="#9CA3AF" />
+
+  <!-- Iron Spiked Helmet -->
+  <path d="M 310 320 C 310 180 490 180 490 320 Z" fill="#1F2937" stroke="#4B5563" stroke-width="4" />
+  <polygon points="400,100 385,200 415,200" fill="#9CA3AF" />
+
+  <!-- Skull Face -->
+  <path d="M 330 330 C 330 260 470 260 470 330 C 470 380 440 420 440 470 C 420 490 380 490 360 470 C 360 420 330 380 330 330 Z" fill="#D1D5DB" />
+
+  <!-- Green Torment Glowing Eyes -->
+  <ellipse cx="370" cy="330" rx="18" ry="22" fill="#111827" />
+  <ellipse cx="430" cy="330" rx="18" ry="22" fill="#111827" />
+  <circle cx="370" cy="330" r="7" fill="#10B981" filter="url(#greenGlow)" />
+  <circle cx="430" cy="330" r="7" fill="#10B981" filter="url(#greenGlow)" />
+
+  <!-- Cracked Teeth -->
+  <g fill="#F3F4F6" stroke="#1F2937" stroke-width="2">
+    <rect x="370" y="440" width="12" height="18" rx="2" />
+    <rect x="384" y="440" width="14" height="22" rx="2" />
+    <rect x="400" y="440" width="14" height="22" rx="2" />
+    <rect x="416" y="440" width="12" height="18" rx="2" />
+  </g>
+
+  <g transform="translate(150, 910)">
+    <rect x="0" y="0" width="500" height="60" rx="8" fill="#022C22" stroke="#10B981" stroke-width="3" />
+    <text x="250" y="38" font-family="Cinzel, Georgia, serif" font-size="24" font-weight="bold" fill="#A7F3D0" text-anchor="middle" letter-spacing="3">CRYPT GUARDIAN</text>
+  </g>
+</svg>

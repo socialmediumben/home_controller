@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Grimoire Display Launcher v1.2.5</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.ico">
+  <link rel="stylesheet" href="/static/css/spellbook.css?v=1.2.5">
+  <style>
+    .launcher-container {
+      max-width: 1300px;
+      margin: 20px auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .monitor-launch-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    .monitor-card {
+      background: var(--panel-bg);
+      border: 2px solid var(--panel-border);
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    }
+
+    .monitor-preview-frame {
+      width: 100%;
+      height: 220px;
+      background: #000;
+      border: 1px solid #3d2b1a;
+      border-radius: 8px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .monitor-preview-frame iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      pointer-events: none;
+    }
+
+    .launch-btn {
+      width: 100%;
+      padding: 12px;
+      font-size: 13px;
+      background: linear-gradient(135deg, #3d2b1a, #20150b);
+      border: 1px solid var(--gold-accent);
+      border-radius: 8px;
+      color: var(--gold-accent);
+      font-family: 'Cinzel', serif;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+      text-decoration: none;
+    }
+
+    .launch-btn:hover {
+      background: rgba(212, 163, 75, 0.25);
+      box-shadow: 0 0 12px var(--gold-glow);
+    }
+
+    .network-pill {
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid #10b981;
+      padding: 12px 20px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .ip-display {
+      font-family: monospace;
+      font-size: 18px;
+      color: #6ee7b7;
+      font-weight: bold;
+    }
+
+    .current-item-tag {
+      font-size: 12px;
+      color: var(--gold-accent);
+      font-weight: bold;
+    }
+
+    .version-tag {
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 12px;
+      background: rgba(212, 163, 75, 0.2);
+      border: 1px solid var(--gold-accent);
+      color: var(--gold-accent);
+      font-family: monospace;
+    }
+
+    .live-status-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 6px #10b981;
+      margin-right: 4px;
+    }
+
+    @media (max-width: 900px) {
+      .monitor-launch-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="launcher-container">
+    <header class="spellbook-header">
+      <div class="title-group">
+        <span class="tome-icon">🖥️</span>
+        <div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <h1 class="book-title">GRIMOIRE MULTI-MONITOR LAUNCHER</h1>
+            <span id="launcherVersionBadge" class="version-tag">v1.2.5</span>
+          </div>
+          <div class="subtitle">OptiPlex Mini PC Display Manager</div>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <div class="active-scene-badge">
+          <div class="status-gem"></div>
+          <span id="launcherActiveScene">Loading Chamber...</span>
+        </div>
+        <a href="/spellbook" class="grimoire-btn" style="text-decoration: none;">
+          📖 Open Spellbook UI
+        </a>
+      </div>
+    </header>
+
+    <!-- Network Info Pill for Tablet Pairing -->
+    <div class="network-pill">
+      <div>
+        <div style="font-size: 12px; color: #a7f3d0; text-transform: uppercase; letter-spacing: 1px;">Tablet Connection URL:</div>
+        <div class="ip-display" id="tabletUrlDisplay">http://localhost:8088/spellbook</div>
+      </div>
+      <div style="font-size: 13px; color: #d1fae5;" id="tabletPeerIndicator">
+        Waiting for Tablet to connect...
+      </div>
+    </div>
+
+    <!-- 3 Displays Cards -->
+    <div class="monitor-launch-grid">
+      <!-- Screen 1: Window TV -->
+      <div class="monitor-card">
+        <div class="scene-card-header">
+          <div class="scene-icon">🪟</div>
+          <div>
+            <div class="scene-name">Window Display (53" TV)</div>
+            <div class="current-item-tag" id="windowCurrentTag">Syncing...</div>
+          </div>
+        </div>
+        <div class="monitor-preview-frame">
+          <iframe id="iframeWindow" src="/display/window?v=1.2.5"></iframe>
+        </div>
+        <a href="/display/window?v=1.2.5" target="_blank" class="launch-btn" onclick="openWindowScreen(event)">
+          🚀 Launch Window (Drag to 53" TV)
+        </a>
+      </div>
+
+      <!-- Screen 2: Picture Frame -->
+      <div class="monitor-card">
+        <div class="scene-card-header">
+          <div class="scene-icon">🖼️</div>
+          <div>
+            <div class="scene-name">Picture Frame Monitor</div>
+            <div class="current-item-tag" id="frameCurrentTag">Syncing...</div>
+          </div>
+        </div>
+        <div class="monitor-preview-frame">
+          <iframe id="iframeFrame" src="/display/frame?v=1.2.5"></iframe>
+        </div>
+        <a href="/display/frame?v=1.2.5" target="_blank" class="launch-btn" onclick="openFrameScreen(event)">
+          🚀 Launch Frame (Drag to Picture Frame)
+        </a>
+      </div>
+
+      <!-- Screen 3: Table Projector -->
+      <div class="monitor-card">
+        <div class="scene-card-header">
+          <div class="scene-icon">🗺️</div>
+          <div>
+            <div class="scene-name">Overhead Table Projector</div>
+            <div class="current-item-tag" id="tableCurrentTag">Syncing...</div>
+          </div>
+        </div>
+        <div class="monitor-preview-frame">
+          <iframe id="iframeTable" src="/display/table?v=1.2.5"></iframe>
+        </div>
+        <a href="/display/table?v=1.2.5" target="_blank" class="launch-btn" onclick="openTableScreen(event)">
+          🚀 Launch Table (Drag to Projector)
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const LAUNCHER_VERSION = "1.2.5";
+    console.log(`%c[Grimoire Launcher] Loaded v${LAUNCHER_VERSION}`, "background: #1e3a8a; color: #93c5fd; font-weight: bold; font-size: 14px; padding: 4px 8px; border-radius: 4px;");
+
+    // Fetch initial state via HTTP
+    fetch('/api/state')
+      .then(r => r.json())
+      .then(data => {
+        console.log('%c[Grimoire Launcher] Initial HTTP State:', "color: #10b981;", data);
+        if (data.network && data.network.local_ip) {
+          const ip = data.network.local_ip;
+          const port = data.network.port || 8088;
+          document.getElementById('tabletUrlDisplay').textContent = `http://${ip}:${port}/spellbook`;
+        }
+        if (data.version) {
+          document.getElementById('launcherVersionBadge').textContent = `v${LAUNCHER_VERSION} (Server v${data.version})`;
+        }
+        updateCardTags(data.current_state);
+        updatePeers(data.peers);
+      })
+      .catch(() => {});
+
+    function updateCardTags(state) {
+      if (!state) return;
+      if (state.scene_name) {
+        document.getElementById('launcherActiveScene').textContent = state.scene_name;
+      }
+      if (state.displays) {
+        if (state.displays.window) {
+          document.getElementById('windowCurrentTag').textContent = state.displays.window.title || '';
+        }
+        if (state.displays.frame) {
+          document.getElementById('frameCurrentTag').textContent = state.displays.frame.title || '';
+        }
+        if (state.displays.table) {
+          document.getElementById('tableCurrentTag').textContent = state.displays.table.title || '';
+        }
+      }
+    }
+
+    function updatePeers(peers) {
+      if (!peers) return;
+      const count = peers.spellbooks_count || 0;
+      const ind = document.getElementById('tabletPeerIndicator');
+      if (ind) {
+        if (count > 0) {
+          ind.innerHTML = `<span class="live-status-dot"></span> <strong>${count} Tablet(s) Connected</strong> and in sync!`;
+          ind.style.color = '#a7f3d0';
+        } else {
+          ind.textContent = 'Waiting for Tablet to connect over Wi-Fi...';
+          ind.style.color = '#d1fae5';
+        }
+      }
+      console.log(`%c[Grimoire Launcher] Active Peers:`, "color: #38bdf8;", peers);
+    }
+
+    // Connect WebSocket with Handshake
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
+
+    ws.onopen = () => {
+      console.log(`%c[Grimoire Launcher] WebSocket connected! Sending HANDSHAKE...`, "color: #10b981; font-weight: bold;");
+      ws.send(JSON.stringify({
+        action: "HANDSHAKE",
+        client_type: "launcher",
+        version: LAUNCHER_VERSION
+      }));
+    };
+
+    ws.onmessage = (event) => {
+      try {
+        const msg = JSON.parse(event.data);
+        if (msg.event === 'HANDSHAKE_ACK') {
+          console.log(`%c[Grimoire Launcher] Handshake ACK from Server v${msg.server_version}!`, "background: #065f46; color: #a7f3d0; font-weight: bold; padding: 2px 6px;");
+          updateCardTags(msg.state);
+          updatePeers(msg.peers);
+        } else if (msg.event === 'PEER_STATUS') {
+          updatePeers(msg.peers);
+        } else if (msg.event === 'SCENE_CHANGED') {
+          console.log(`%c[Grimoire Launcher] Live Scene Update: '${msg.scene ? msg.scene.name : msg.state.scene_name}'`, "color: #f59e0b; font-weight: bold;");
+          updateCardTags(msg.state);
+        } else if (msg.event === 'DISPLAY_UPDATED') {
+          console.log(`%c[Grimoire Launcher] Live Display Update for ${msg.screen}:`, "color: #a855f7;", msg.display);
+          if (msg.screen === 'window') {
+            document.getElementById('windowCurrentTag').textContent = msg.display.title || '';
+          } else if (msg.screen === 'frame') {
+            document.getElementById('frameCurrentTag').textContent = msg.display.title || '';
+          } else if (msg.screen === 'table') {
+            document.getElementById('tableCurrentTag').textContent = msg.display.title || '';
+          }
+        }
+      } catch (e) {}
+    };
+
+    function openWindowScreen(e) {
+      window.open('/display/window?v=1.2.5', 'GrimoireWindow', 'width=1920,height=1080,menubar=no,toolbar=no');
+      e.preventDefault();
+    }
+    function openFrameScreen(e) {
+      window.open('/display/frame?v=1.2.5', 'GrimoireFrame', 'width=1080,height=1920,menubar=no,toolbar=no');
+      e.preventDefault();
+    }
+    function openTableScreen(e) {
+      window.open('/display/table?v=1.2.5', 'GrimoireTable', 'width=1920,height=1080,menubar=no,toolbar=no');
+      e.preventDefault();
+    }
+  </script>
+</body>
+</html>
