@@ -1,17 +1,26 @@
 # ==============================================================================
-# The Wizard's Grimoire - Autostart & Desktop Shortcut Setup Script
-# Run in an elevated PowerShell session to configure Logon/Unlock tasks & desktop shortcut.
+# The Wizard's Grimoire - Autostart and Desktop Shortcut Setup Script
+# Pure ASCII - No Unicode / Emojis to guarantee compatibility with all PowerShell encodings.
 # ==============================================================================
 
 param(
     [string]$TargetUser = "socia",
-    [string]$AppDir = "C:\Users\socia\Desktop\home_controller"
+    [string]$AppDir = ""
 )
 
+if (-not $AppDir) {
+    $AppDir = $PSScriptRoot
+}
+if (-not $AppDir) {
+    $AppDir = "C:\Users\$TargetUser\Desktop\home_controller"
+}
+
 Write-Host "=================================================================" -ForegroundColor Cyan
-Write-Host "  THE WIZARD'S GRIMOIRE - TRAY & AUTOSTART INSTALLER" -ForegroundColor Cyan
+Write-Host "  THE WIZARD'S GRIMOIRE - AUTOSTART AND TRAY INSTALLER" -ForegroundColor Cyan
 Write-Host "=================================================================" -ForegroundColor Cyan
 Write-Host ""
+Write-Host "[+] Target User: $TargetUser" -ForegroundColor White
+Write-Host "[+] App Directory: $AppDir" -ForegroundColor White
 
 if (-not (Test-Path $AppDir)) {
     Write-Warning "Target directory '$AppDir' does not exist yet. Please verify path."
@@ -27,6 +36,7 @@ $TrayScriptPath = Join-Path $AppDir "grimoire_tray.ps1"
 $IconPath = Join-Path $AppDir "static\grimoire.ico"
 
 Write-Host "[+] Creating Desktop Shortcut: $ShortcutPath" -ForegroundColor Yellow
+
 $WshShell = New-Object -ComObject WScript.Shell
 $Shortcut = $WshShell.CreateShortcut($ShortcutPath)
 $Shortcut.TargetPath = "powershell.exe"
@@ -95,8 +105,8 @@ Write-Host "    [OK] Scheduled Task registered for user '$TargetUser'!" -Foregro
 Write-Host ""
 Write-Host "=================================================================" -ForegroundColor Cyan
 Write-Host "  Installation Complete!" -ForegroundColor Green
-Write-Host "  • Logon: Starts silently to the System Tray" -ForegroundColor White
-Write-Host "  • Unlock: Verifies service is running (idempotent)" -ForegroundColor White
-Write-Host "  • Tray Icon: Right-click to Open Launcher/Spellbook, Restart, or Exit" -ForegroundColor White
-Write-Host "  • Desktop Shortcut: 1-click launch that opens both service & browser" -ForegroundColor White
+Write-Host "  - Logon: Starts silently to the System Tray" -ForegroundColor White
+Write-Host "  - Unlock: Verifies service is running (idempotent)" -ForegroundColor White
+Write-Host "  - Tray Icon: Right-click to Open Launcher/Spellbook, Restart, or Exit" -ForegroundColor White
+Write-Host "  - Desktop Shortcut: 1-click launch that opens both service and browser" -ForegroundColor White
 Write-Host "=================================================================" -ForegroundColor Cyan
