@@ -1,4 +1,4 @@
-const DISPLAY_CLIENT_VERSION = "1.3.2";
+const DISPLAY_CLIENT_VERSION = "1.3.3";
 
 // Determine screen type: query param takes precedence (?screen=window), then URL pathname
 const urlParams = new URLSearchParams(window.location.search);
@@ -22,6 +22,8 @@ const layerA = document.getElementById('layerA');
 const layerB = document.getElementById('layerB');
 const mirrorLayer = document.getElementById('mirrorLayer');
 const mirrorVideo = document.getElementById('mirrorVideo');
+const mirrorCanvas = document.getElementById('mirrorCanvas');
+const mirrorCtx = mirrorCanvas ? mirrorCanvas.getContext('2d') : null;
 const mirrorBadge = document.getElementById('mirrorBadge');
 const weatherCanvas = document.getElementById('weatherCanvas');
 const gothicMullions = document.getElementById('gothicMullions');
@@ -38,11 +40,12 @@ let currentDisplayState = null;
 let animationFrameId = null;
 let crossfadeTimeout = null;
 
-// WebRTC Screen & Window Mirroring State
+// Screen & Window Mirroring State
 let mirrorPc = null;
 let isMirroring = false;
 let pendingIceCandidates = [];
 let disconnectTimer = null;
+let mirrorWatchdogTimer = null;
 
 // Weather Canvas Setup
 let ctx = weatherCanvas ? weatherCanvas.getContext('2d') : null;
@@ -449,22 +452,7 @@ async function handleMirrorOffer(msg) {
 
   mirrorPc.ontrack = (event) => {
     console.log(`%c[Grimoire Display: ${currentScreen}] Remote media track attached:`, "color: #10b981; font-weight: bold;", event.track.kind);
-
-    if (mirrorBadge) {
-      mirrorBadge.textContent = '● CONNECTING MIRROR...';
-      mirrorBadge.style.display = 'inline-block';
-    }
-
-    // Stop and hide weather canvas loop so it never renders under/over the mirror
-    if (weatherCanvas) weatherCanvas.style.display = 'none';
-    if (animationFrameId) {
-      cancelAnimationFrame(animationFrameId);
-      animationFrameId = null;
-    }
-
-    // Hide pre-existing media crossfade layers
-    if (layerA) layerA.style.display = 'none';
-    if (layerB) layerB.style.display = 'none';
+    startMirroringDisplay(msg.options);
 
     if (mirrorVideo) {
       const stream = (event.streams && event.streams.length > 0) ? event.streams[0] : new MediaStream([event.track]);
@@ -484,20 +472,6 @@ async function handleMirrorOffer(msg) {
         if (mirrorBadge) mirrorBadge.textContent = '● LIVE MIRROR';
       };
       mirrorVideo.play().catch(e => console.warn('Mirror video playback blocked:', e));
-    }
-
-    if (mirrorLayer) {
-      mirrorLayer.style.display = 'flex';
-      mirrorLayer.style.opacity = '1';
-    }
-    isMirroring = true;
-
-    // Overlay visibility option
-    if (msg.options && msg.options.hide_overlays) {
-      if (gothicMullions) gothicMullions.style.display = 'none';
-      if (ornateFrame) ornateFrame.style.display = 'none';
-      if (captionBanner) captionBanner.style.display = 'none';
-      if (gridSvg) gridSvg.style.display = 'none';
     }
   };
 
@@ -600,10 +574,95 @@ async function handleMirrorCandidate(msg) {
   }
 }
 
+function startMirroringDisplay(options = {}) {
+  isMirroring = true;
+  resetMirrorWatchdog();
+
+  if (mirrorBadge) {
+    mirrorBadge.textContent = '● LIVE MIRROR';
+    mirrorBadge.style.display = 'inline-block';
+  }
+
+  // Stop and hide weather canvas loop so it never renders under/over the mirror
+  if (weatherCanvas) weatherCanvas.style.display = 'none';
+  if (animationFrameId) {
+    cancelAnimationFrame(animationFrameId);
+    animationFrameId = null;
+  }
+
+  // Hide pre-existing media crossfade layers
+  if (layerA) layerA.style.display = 'none';
+  if (layerB) layerB.style.display = 'none';
+
+  if (mirrorCanvas) {
+    if (options && options.fit === 'cover') {
+      mirrorCanvas.classList.add('fit-cover');
+    } else {
+      mirrorCanvas.classList.remove('fit-cover');
+    }
+  }
+
+  if (mirrorLayer) {
+    mirrorLayer.style.display = 'flex';
+    mirrorLayer.style.opacity = '1';
+  }
+
+  // Overlay visibility option
+  if (options && options.hide_overlays) {
+    if (gothicMullions) gothicMullions.style.display = 'none';
+    if (ornateFrame) ornateFrame.style.display = 'none';
+    if (captionBanner) captionBanner.style.display = 'none';
+    if (gridSvg) gridSvg.style.display = 'none';
+  }
+}
+
+function resetMirrorWatchdog() {
+  if (mirrorWatchdogTimer) clearTimeout(mirrorWatchdogTimer);
+  mirrorWatchdogTimer = setTimeout(() => {
+    if (isMirroring) {
+      console.warn(`[Grimoire Display: ${currentScreen}] No mirror frames received for 12 seconds. Stopping mirror.`);
+      stopMirroringDisplay();
+    }
+  }, 12000);
+}
+
+function handleBinaryMirrorFrame(arrayBuffer) {
+  if (arrayBuffer.byteLength < 5) return;
+  const header = new Uint8Array(arrayBuffer, 0, 4);
+  // Header: 'M', 'I', 'R', screenCode (0=window, 1=frame, 2=table)
+  if (header[0] !== 0x4D || header[1] !== 0x49 || header[2] !== 0x52) return;
+  const screenCode = header[3];
+  const targetName = screenCode === 0 ? 'window' : screenCode === 1 ? 'frame' : 'table';
+  if (targetName !== currentScreen) return;
+
+  if (!isMirroring) {
+    startMirroringDisplay();
+  }
+  resetMirrorWatchdog();
+
+  const imageBlob = new Blob([new Uint8Array(arrayBuffer, 4)], { type: 'image/jpeg' });
+  createImageBitmap(imageBlob).then(bitmap => {
+    if (!isMirroring || !mirrorCanvas || !mirrorCtx) {
+      bitmap.close();
+      return;
+    }
+    if (mirrorCanvas.width !== bitmap.width || mirrorCanvas.height !== bitmap.height) {
+      mirrorCanvas.width = bitmap.width;
+      mirrorCanvas.height = bitmap.height;
+    }
+    mirrorCtx.drawImage(bitmap, 0, 0);
+    bitmap.close();
+  }).catch(() => {});
+}
+
 function stopMirroringDisplay() {
   if (!isMirroring && (!mirrorLayer || mirrorLayer.style.display === 'none')) return;
   console.log(`%c[Grimoire Display: ${currentScreen}] Stopping screen mirror...`, "color: #f97316; font-weight: bold;");
   isMirroring = false;
+  if (mirrorWatchdogTimer) {
+    clearTimeout(mirrorWatchdogTimer);
+    mirrorWatchdogTimer = null;
+  }
   if (disconnectTimer) {
     clearTimeout(disconnectTimer);
     disconnectTimer = null;
@@ -615,6 +674,9 @@ function stopMirroringDisplay() {
   if (mirrorVideo) {
     try { mirrorVideo.pause(); } catch(e) {}
     mirrorVideo.srcObject = null;
+  }
+  if (mirrorCtx && mirrorCanvas) {
+    mirrorCtx.clearRect(0, 0, mirrorCanvas.width, mirrorCanvas.height);
   }
   if (mirrorLayer) {
     mirrorLayer.style.display = 'none';
@@ -639,6 +701,7 @@ function connectWebSocket() {
   const wsUrl = `${protocol}//${window.location.host}/ws`;
 
   ws = new WebSocket(wsUrl);
+  ws.binaryType = "arraybuffer";
 
   ws.onopen = () => {
     console.log(`%c[Grimoire Display: ${currentScreen}] Connected! Sending HANDSHAKE...`, "color: #10b981; font-weight: bold;");
@@ -651,6 +714,11 @@ function connectWebSocket() {
   };
 
   ws.onmessage = (event) => {
+    if (event.data instanceof ArrayBuffer) {
+      handleBinaryMirrorFrame(event.data);
+      return;
+    }
+
     try {
       const msg = JSON.parse(event.data);
 
@@ -677,6 +745,12 @@ function connectWebSocket() {
           console.log(`%c[Grimoire Display: ${currentScreen}] Received DISPLAY_UPDATED:`, "color: #a855f7; font-weight: bold;", msg.display);
           if (isMirroring) stopMirroringDisplay();
           renderDisplay(msg.display);
+        }
+
+      } else if (msg.event === 'START_MIRROR_STREAM') {
+        if (msg.screen === currentScreen) {
+          console.log(`%c[Grimoire Display: ${currentScreen}] Received START_MIRROR_STREAM`, "color: #10b981; font-weight: bold;");
+          startMirroringDisplay(msg.options);
         }
 
       } else if (msg.event === 'WEBRTC_SIGNAL') {

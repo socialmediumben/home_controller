@@ -224,14 +224,17 @@ body:hover .display-toolbar {
   pointer-events: auto;
 }
 
-.mirror-video {
+.mirror-video,
+.mirror-canvas {
   width: 100%;
   height: 100%;
   object-fit: contain; /* Prevents desktop, battlemaps, and windows from being cropped */
   background: #000;
+  display: block;
 }
 
-.mirror-video.fit-cover {
+.mirror-video.fit-cover,
+.mirror-canvas.fit-cover {
   object-fit: cover;
 }
 

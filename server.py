@@ -33,7 +33,7 @@ if not os.path.exists(FAVICON_PATH):
     FAVICON_PATH = os.path.join(STATIC_DIR, "favicon.svg")
 os.makedirs(UPLOADS_DIR, exist_ok=True)
 
-APP_VERSION = "1.3.2"
+APP_VERSION = "1.3.3"
 
 # Helper to get local LAN IP address
 def get_local_ip() -> str:
@@ -245,6 +245,17 @@ class ConnectionManager:
             if info.get("type") == client_type:
                 try:
                     await ws.send_json(message)
+                    count += 1
+                except Exception:
+                    pass
+        return count
+
+    async def send_bytes_to_type(self, client_type: str, data: bytes) -> int:
+        count = 0
+        for ws, info in list(self.clients.items()):
+            if info.get("type") == client_type:
+                try:
+                    await ws.send_bytes(data)
                     count += 1
                 except Exception:
                     pass
@@ -605,7 +616,20 @@ async def websocket_endpoint(websocket: WebSocket):
 
     try:
         while True:
-            data = await websocket.receive_text()
+            ws_msg = await websocket.receive()
+            if "bytes" in ws_msg and ws_msg["bytes"]:
+                raw_bytes = ws_msg["bytes"]
+                # Packet format: b"MIR" + 1 byte screen_code (0=window, 1=frame, 2=table) + payload
+                if len(raw_bytes) > 4 and raw_bytes[:3] == b"MIR":
+                    screen_code = raw_bytes[3]
+                    screen_name = "window" if screen_code == 0 else "frame" if screen_code == 1 else "table"
+                    await manager.send_bytes_to_type(f"display_{screen_name}", raw_bytes)
+                continue
+
+            if "text" not in ws_msg or not ws_msg["text"]:
+                continue
+
+            data = ws_msg["text"]
             try:
                 msg = json.loads(data)
                 action = msg.get("action")
@@ -730,6 +754,22 @@ async def websocket_endpoint(websocket: WebSocket):
                             await manager.send_to_type("spellbook", forward_msg)
                     elif target_screen:
                         await manager.send_to_type(f"display_{target_screen}", forward_msg)
+
+                elif action == "START_MIRROR_STREAM":
+                    screen = msg.get("screen")
+                    options = msg.get("options", {})
+                    logger.info(f"--> [MIRROR STREAM START] Screen: {screen}, Options: {options}")
+                    if screen:
+                        await manager.send_to_type(f"display_{screen}", {
+                            "event": "START_MIRROR_STREAM",
+                            "screen": screen,
+                            "options": options
+                        })
+                        await manager.broadcast({
+                            "event": "MIRROR_STATUS",
+                            "screen": screen,
+                            "active": True
+                        })
 
                 elif action == "STOP_MIRROR":
                     screen = msg.get("screen")

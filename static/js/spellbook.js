@@ -1,9 +1,9 @@
 /**
- * Spellbook Tablet Controller JavaScript (v1.3.2)
+ * Spellbook Tablet Controller JavaScript (v1.3.3)
  * Features: Developer Mode, Arcane Preset Editor, Custom Media Uploader, Room & Scene Isolation, Arcane Screen Mirroring.
  */
 
-const CLIENT_VERSION = "1.3.2";
+const CLIENT_VERSION = "1.3.3";
 console.log(`%c[Grimoire Spellbook] Loaded v${CLIENT_VERSION}`, "background: #312e81; color: #fbbf24; font-size: 14px; font-weight: bold; padding: 4px 8px; border-radius: 4px;");
 
 let appState = null;
@@ -1349,80 +1349,17 @@ async function startModalMirror() {
 
   try {
     const stream = await navigator.mediaDevices.getDisplayMedia({
-      video: { cursor: "always", frameRate: { ideal: 60 } },
+      video: { cursor: "always", frameRate: { ideal: 30, max: 30 } },
       audio: audioEnabled
     });
 
-    const pc = new RTCPeerConnection({
-      iceServers: [
-        { urls: 'stun:stun.l.google.com:19302' },
-        { urls: 'stun:stun1.l.google.com:19302' },
-        { urls: 'stun:stun2.l.google.com:19302' }
-      ]
-    });
+    const screenCode = screen === 'window' ? 0 : screen === 'frame' ? 1 : 2;
 
-    let disconnectTimeout = null;
-    pc.onconnectionstatechange = () => {
-      console.log(`[Grimoire Spellbook] Mirror PC (${screen}) connection state: ${pc.connectionState}`);
-      if (pc.connectionState === 'connected') {
-        if (disconnectTimeout) {
-          clearTimeout(disconnectTimeout);
-          disconnectTimeout = null;
-        }
-      } else if (pc.connectionState === 'disconnected') {
-        if (!disconnectTimeout) {
-          disconnectTimeout = setTimeout(() => {
-            if (pc && pc.connectionState === 'disconnected') {
-              console.warn(`[Grimoire Spellbook] Mirror PC (${screen}) disconnect timed out.`);
-              stopModalMirror(screen);
-            }
-          }, 15000);
-        }
-      } else if (pc.connectionState === 'failed' || pc.connectionState === 'closed') {
-        if (disconnectTimeout) {
-          clearTimeout(disconnectTimeout);
-          disconnectTimeout = null;
-        }
-        stopModalMirror(screen);
-      }
-    };
-
-    pc.oniceconnectionstatechange = () => {
-      console.log(`[Grimoire Spellbook] Mirror PC (${screen}) ICE state: ${pc.iceConnectionState}`);
-      if (pc.iceConnectionState === 'connected' || pc.iceConnectionState === 'completed') {
-        handleMirrorStatusUpdate(screen, true);
-      }
-    };
-
-    stream.getTracks().forEach(track => {
-      pc.addTrack(track, stream);
-      track.onended = () => {
-        stopModalMirror(screen);
-      };
-    });
-
-    pc.onicecandidate = (event) => {
-      if (event.candidate && ws && ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({
-          action: "WEBRTC_SIGNAL",
-          target_screen: screen,
-          sender_id: myClientId,
-          signal_type: "candidate",
-          candidate: event.candidate
-        }));
-      }
-    };
-
-    const offer = await pc.createOffer();
-    await pc.setLocalDescription(offer);
-
+    // Send START_MIRROR_STREAM action to server so displays prepare mirror layer immediately
     if (ws && ws.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify({
-        action: "WEBRTC_SIGNAL",
-        target_screen: screen,
-        sender_id: myClientId,
-        signal_type: "offer",
-        sdp: pc.localDescription,
+        action: "START_MIRROR_STREAM",
+        screen: screen,
         options: {
           fit: fitMode,
           hide_overlays: !showOverlay
@@ -1430,7 +1367,110 @@ async function startModalMirror() {
       }));
     }
 
-    activeMirrorSessions[screen] = { pc, stream };
+    // Set up offscreen video element to receive the stream frames
+    const video = document.createElement('video');
+    video.autoplay = true;
+    video.playsInline = true;
+    video.muted = true;
+    video.srcObject = stream;
+    await video.play().catch(e => console.warn('[Grimoire Spellbook] Offscreen video play warning:', e));
+
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+
+    let isStreaming = true;
+    let isSending = false;
+    let animFrameId = null;
+    let lastFrameTime = 0;
+    const targetInterval = 1000 / 30; // Target ~30 FPS
+
+    const streamFrame = (now) => {
+      if (!isStreaming) return;
+      animFrameId = requestAnimationFrame(streamFrame);
+
+      if (now - lastFrameTime < targetInterval) return;
+      if (isSending) return; // Drop frame if previous is still encoding/sending
+      if (!ws || ws.readyState !== WebSocket.OPEN) return;
+      if (ws.bufferedAmount > 128 * 1024) return; // Drop frame if network buffer is busy
+
+      const vw = video.videoWidth;
+      const vh = video.videoHeight;
+      if (!vw || !vh) return;
+
+      lastFrameTime = now;
+      isSending = true;
+
+      // Scale to max 1920x1080 to maintain high detail while keeping throughput fast
+      const maxW = 1920;
+      const maxH = 1080;
+      const scale = Math.min(1, maxW / vw, maxH / vh);
+      const drawW = Math.round(vw * scale);
+      const drawH = Math.round(vh * scale);
+
+      if (canvas.width !== drawW || canvas.height !== drawH) {
+        canvas.width = drawW;
+        canvas.height = drawH;
+      }
+
+      ctx.drawImage(video, 0, 0, drawW, drawH);
+
+      canvas.toBlob((blob) => {
+        if (!blob || !isStreaming || !ws || ws.readyState !== WebSocket.OPEN) {
+          isSending = false;
+          return;
+        }
+
+        blob.arrayBuffer().then((buf) => {
+          if (!isStreaming || !ws || ws.readyState !== WebSocket.OPEN) {
+            isSending = false;
+            return;
+          }
+          const uint8 = new Uint8Array(buf);
+          const packet = new Uint8Array(4 + uint8.length);
+          packet[0] = 0x4D; // 'M'
+          packet[1] = 0x49; // 'I'
+          packet[2] = 0x52; // 'R'
+          packet[3] = screenCode;
+          packet.set(uint8, 4);
+
+          try {
+            ws.send(packet.buffer);
+          } catch (e) {
+            console.warn('[Grimoire Spellbook] Mirror frame send error:', e);
+          }
+          isSending = false;
+        }).catch(() => { isSending = false; });
+      }, 'image/jpeg', 0.82);
+    };
+
+    animFrameId = requestAnimationFrame(streamFrame);
+
+    const cleanup = () => {
+      isStreaming = false;
+      if (animFrameId) {
+        cancelAnimationFrame(animFrameId);
+        animFrameId = null;
+      }
+      try {
+        stream.getTracks().forEach(t => t.stop());
+      } catch (e) {}
+      try {
+        video.pause();
+        video.srcObject = null;
+      } catch (e) {}
+    };
+
+    stream.getTracks().forEach(track => {
+      track.onended = () => {
+        stopModalMirror(screen);
+      };
+    });
+
+    activeMirrorSessions[screen] = {
+      stream,
+      stop: cleanup
+    };
+
     playChime(660, 'triangle', 0.15);
     updateMirrorModalState();
     handleMirrorStatusUpdate(screen, true);
@@ -1447,8 +1487,12 @@ function stopModalMirror(specificScreen = null) {
   const screen = specificScreen || document.getElementById('modalMirrorScreenSelect')?.value || 'table';
   const session = activeMirrorSessions[screen];
   if (session) {
-    try { session.stream.getTracks().forEach(t => t.stop()); } catch (e) {}
-    try { session.pc.close(); } catch (e) {}
+    if (typeof session.stop === 'function') {
+      session.stop();
+    } else {
+      if (session.stream) try { session.stream.getTracks().forEach(t => t.stop()); } catch (e) {}
+      if (session.pc) try { session.pc.close(); } catch (e) {}
+    }
     delete activeMirrorSessions[screen];
   }
 
