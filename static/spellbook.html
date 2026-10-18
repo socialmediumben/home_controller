@@ -126,6 +126,10 @@
             <span id="windowPreviewText" style="color: #b8a68b; font-size: 13px;">Syncing with Window...</span>
           </div>
           <div class="preset-options-list">
+            <div class="option-item" onclick="openMirrorModal('window')" style="border-color: rgba(56, 189, 248, 0.4); background: rgba(56, 189, 248, 0.08);">
+              <span>🖥️ Mirror Window / Screen to TV</span>
+              <span class="mini-badge" id="badgeMirrorWindow" style="border-color: #38bdf8; color: #38bdf8;">Cast</span>
+            </div>
             <div class="option-item" onclick="setWindowEffect('rain_storm', 'Rain on Castle Glass')">
               <span>🌧️ Rainy Castle Window</span>
               <span class="mini-badge">Storm</span>
@@ -162,6 +166,10 @@
             <span id="framePreviewPlaceholder" style="color: #b8a68b; font-size: 13px;">Syncing with Frame...</span>
           </div>
           <div class="preset-options-list">
+            <div class="option-item" onclick="openMirrorModal('frame')" style="border-color: rgba(56, 189, 248, 0.4); background: rgba(56, 189, 248, 0.08);">
+              <span>🖥️ Mirror Window / Screen to Frame</span>
+              <span class="mini-badge" id="badgeMirrorFrame" style="border-color: #38bdf8; color: #38bdf8;">Cast</span>
+            </div>
             <div class="option-item" onclick="setFramePortrait('/static/media/frames/archmage.svg', 'Archmage Ignis', 'Grand Conjurer')">
               <span>🧙 Archmage Ignis</span>
               <span class="mini-badge">Wizard</span>
@@ -202,6 +210,10 @@
             <span id="tablePreviewPlaceholder" style="color: #b8a68b; font-size: 13px;">Syncing with Table...</span>
           </div>
           <div class="preset-options-list">
+            <div class="option-item" onclick="openMirrorModal('table')" style="border-color: rgba(56, 189, 248, 0.4); background: rgba(56, 189, 248, 0.08);">
+              <span>🖥️ Mirror Window / Screen to Table</span>
+              <span class="mini-badge" id="badgeMirrorTable" style="border-color: #38bdf8; color: #38bdf8;">Cast</span>
+            </div>
             <div class="option-item" onclick="setTableMap('/static/media/tables/library.svg', 'The Arcane Library')">
               <span>📚 The Arcane Library</span>
               <span class="mini-badge">Study</span>
@@ -607,8 +619,61 @@
       </div>
     </div>
 
+    <!-- Arcane Screen & Window Mirror Modal -->
+    <div id="mirrorModal" class="modal-overlay">
+      <div class="modal-box" style="max-width: 520px;">
+        <div class="modal-header">
+          <div class="modal-title">🖥️ Mirror Screen or Window</div>
+          <button class="modal-close" onclick="closeMirrorModal()">✕</button>
+        </div>
+        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">
+          Cast an application window (Foundry VTT, Owlbear, Discord, Spotify, PDF) or your entire desktop directly to one of your room displays.
+        </p>
+
+        <div class="form-group">
+          <label>Target Display Chamber:</label>
+          <select id="modalMirrorScreenSelect" style="width: 100%; padding: 8px; background: #150f09; border: 1px solid var(--panel-border); color: var(--gold-accent); border-radius: 6px;">
+            <option value="window">🪟 53" Window TV</option>
+            <option value="frame">🖼️ Picture Frame Monitor</option>
+            <option value="table" selected>🗺️ Tabletop Projector</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Display Fit Mode:</label>
+          <select id="modalMirrorFitSelect" style="width: 100%; padding: 8px; background: #150f09; border: 1px solid var(--panel-border); color: var(--gold-accent); border-radius: 6px;">
+            <option value="contain" selected>Fit Screen (Contain - No Cropping, Recommended for Maps/Windows)</option>
+            <option value="cover">Fill Screen (Cover - Edge to edge crop)</option>
+          </select>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 8px; margin: 6px 0; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 6px;">
+          <label style="cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 12px;">
+            <input type="checkbox" id="modalMirrorAudioCheck"> Stream Audio (if available from window or tab)
+          </label>
+          <label style="cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 12px;">
+            <input type="checkbox" id="modalMirrorOverlayCheck" checked> Keep Thematic Overlays (Mullions / Gilded Frame / Tactical Grid)
+          </label>
+        </div>
+
+        <div id="modalMirrorActiveStatus" style="display: none; background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; color: #fca5a5; padding: 10px; border-radius: 6px; font-size: 12px; text-align: center;">
+          ● Currently Mirroring to <strong id="modalMirrorActiveScreenName">Table Projector</strong>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px;">
+          <button class="grimoire-btn" onclick="closeMirrorModal()">Close</button>
+          <button id="modalMirrorStopBtn" class="grimoire-btn" style="display: none; border-color: #ef4444; color: #fca5a5; background: rgba(239, 68, 68, 0.2);" onclick="stopModalMirror()">
+            🛑 Stop Mirroring
+          </button>
+          <button id="modalMirrorStartBtn" class="grimoire-btn" style="border-color: #38bdf8; color: #38bdf8; font-weight: bold; background: rgba(56, 189, 248, 0.12);" onclick="startModalMirror()">
+            ✨ Choose Window & Start Mirroring
+          </button>
+        </div>
+      </div>
+    </div>
+
   </div>
 
-  <script src="/static/js/spellbook.js?v=1.2.5"></script>
+  <script src="/static/js/spellbook.js?v=1.3.0"></script>
 </body>
 </html>

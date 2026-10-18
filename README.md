@@ -1,4 +1,4 @@
-# 📜 The Wizard's Grimoire: D&D Game Room & Display Controller (v1.2.5)
+# 📜 The Wizard's Grimoire: D&D Game Room & Display Controller (v1.3.0)
 
 A unified local controller for a Dungeons & Dragons game room decorated as a wizard's study. Controls **three independent thematic displays** and **smart lighting (Home Depot Hubspace & Google Home)** from a tablet disguised as a magical spellbook.
 
@@ -13,6 +13,7 @@ A unified local controller for a Dungeons & Dragons game room decorated as a wiz
 │   • One-touch atmospheric scenes                       │
 │   • Manual lighting & candle/lightning FX              │
 │   • Screen overrides (maps, portraits, weather)        │
+│   • Arcane Screen & Window Mirroring Controller        │
 │   • Developer Mode: Live preset editor & art uploader  │
 └───────────────────────────┬────────────────────────────┘
                             │ WebSocket (LAN Wi-Fi)
@@ -20,6 +21,7 @@ A unified local controller for a Dungeons & Dragons game room decorated as a wiz
 ┌────────────────────────────────────────────────────────┐
 │           Dell OptiPlex Mini PC (Local Hub)            │
 │   • FastAPI + WebSockets real-time server              │
+│   • WebRTC LAN low-latency screen/window streamer      │
 │   • Hubspace Cloud API / Simulator module              │
 │   • Local media server & canvas weather engine         │
 └────────────┬──────────────┬──────────────┬─────────────┘
@@ -27,8 +29,9 @@ A unified local controller for a Dungeons & Dragons game room decorated as a wiz
              ▼              ▼              ▼
        [Window TV]    [Frame Monitor] [Table Projector]
          53" TV       Framed Portrait    Overhead Table
-      Gothic glass     Moving artwork    Battlemaps or
-     ambient weather    & NPC clues       Roll20 embed
+      Gothic glass     Moving artwork    Battlemaps, live
+     ambient weather    & NPC clues       window mirror, or
+     or window cast   or handout cast       Roll20 embed
 ```
 
 ---
@@ -46,7 +49,19 @@ A unified local controller for a Dungeons & Dragons game room decorated as a wiz
 4. **Connect your Tablet ("Spellbook"):**
    * Make sure your tablet is on the same home Wi-Fi network.
    * Open the URL shown in `run.bat` (e.g. `http://192.168.86.250:8088/spellbook`).
-   * Verify that the top header shows `v1.2.5 ● Connected`!
+   * Verify that the top header shows `v1.3.0 ● Synced`!
+
+---
+
+## 🖥️ Screen & Window Mirroring
+
+In addition to pre-built atmospheric scenes and media, you can mirror **any application window or monitor** directly onto any of the 3 displays right from the **Spellbook**:
+
+* **How to Mirror:** In the Spellbook on your tablet or PC, tap **Screen Overrides** and click **🖥️ Mirror Window / Screen** under the display you want to cast to (Window TV, Picture Frame, or Table Projector).
+* **Window vs. Full Screen:** Choose whether to stream an entire monitor or just a specific application window (Foundry VTT, Owlbear Rodeo, Discord, VLC, Spotify, or a PDF reader).
+* **Display Fit Options:** Choose between **Fit Screen (No Crop)** to ensure battlemaps and window text are fully visible without cropping, or **Fill Screen (Cover)** for cinematic visuals.
+* **Thematic Overlays:** Keep or toggle thematic overlays (gothic window mullions, gilded portrait frame, or tactical 1-inch tabletop grid) over your mirrored stream.
+* **Ultra-Low Latency:** Uses native browser WebRTC over your local network (< 50ms latency, 60 FPS, hardware accelerated).
 
 ---
 
@@ -80,3 +95,4 @@ A unified local controller for a Dungeons & Dragons game room decorated as a wiz
 * **Images & Maps:** Drop your `.jpg`, `.png`, or `.svg` files into `static/media/tables/`, `static/media/frames/`, or `static/media/windows/`.
 * **Video Loops:** You can also drop animated `.mp4` or `.webm` battlemaps directly into the media folders—the displays support seamless looping video.
 * **Roll20 Support:** On the tablet spellbook, tap **Screen Overrides ➔ Table Projector ➔ Launch Roll20 Web Embed** and enter your campaign link to project Roll20 directly onto the tabletop.
+

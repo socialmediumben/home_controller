@@ -1,4 +1,4 @@
-const DISPLAY_CLIENT_VERSION = "1.2.5";
+const DISPLAY_CLIENT_VERSION = "1.3.0";
 
 // Determine screen type: query param takes precedence (?screen=window), then URL pathname
 const urlParams = new URLSearchParams(window.location.search);
@@ -20,6 +20,9 @@ if (screenLabelEl) screenLabelEl.textContent = `v${DISPLAY_CLIENT_VERSION} - ${c
 // Elements
 const layerA = document.getElementById('layerA');
 const layerB = document.getElementById('layerB');
+const mirrorLayer = document.getElementById('mirrorLayer');
+const mirrorVideo = document.getElementById('mirrorVideo');
+const mirrorBadge = document.getElementById('mirrorBadge');
 const weatherCanvas = document.getElementById('weatherCanvas');
 const gothicMullions = document.getElementById('gothicMullions');
 const ornateFrame = document.getElementById('ornateFrame');
@@ -34,6 +37,10 @@ let inactiveLayer = layerB;
 let currentDisplayState = null;
 let animationFrameId = null;
 let crossfadeTimeout = null;
+
+// WebRTC Screen & Window Mirroring State
+let mirrorPc = null;
+let isMirroring = false;
 
 // Weather Canvas Setup
 let ctx = weatherCanvas ? weatherCanvas.getContext('2d') : null;
@@ -401,6 +408,116 @@ function fetchCurrentState() {
     .catch(err => console.warn('Could not fetch initial state via HTTP:', err));
 }
 
+// WebRTC Mirror Stream Receiver Functions
+async function handleMirrorOffer(msg) {
+  console.log(`%c[Grimoire Display: ${currentScreen}] Received WebRTC screen mirror offer from ${msg.sender_id}`, "color: #38bdf8; font-weight: bold;");
+  
+  if (mirrorPc) {
+    try { mirrorPc.close(); } catch(e) {}
+    mirrorPc = null;
+  }
+
+  const rtcConfig = {
+    iceServers: [
+      { urls: 'stun:stun.l.google.com:19302' },
+      { urls: 'stun:stun1.l.google.com:19302' }
+    ]
+  };
+
+  mirrorPc = new RTCPeerConnection(rtcConfig);
+
+  mirrorPc.onicecandidate = (event) => {
+    if (event.candidate && ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({
+        action: "WEBRTC_SIGNAL",
+        target_id: msg.sender_id,
+        target_screen: currentScreen,
+        signal_type: "candidate",
+        candidate: event.candidate
+      }));
+    }
+  };
+
+  mirrorPc.ontrack = (event) => {
+    console.log(`%c[Grimoire Display: ${currentScreen}] Remote media track attached:`, "color: #10b981; font-weight: bold;", event.track.kind);
+    if (mirrorVideo) {
+      mirrorVideo.srcObject = event.streams[0];
+      if (msg.options && msg.options.fit === 'cover') {
+        mirrorVideo.classList.add('fit-cover');
+      } else {
+        mirrorVideo.classList.remove('fit-cover');
+      }
+      mirrorVideo.play().catch(e => console.warn('Mirror video playback blocked or pending:', e));
+    }
+    if (mirrorLayer) mirrorLayer.style.display = 'flex';
+    if (mirrorBadge) mirrorBadge.style.display = 'inline-block';
+    isMirroring = true;
+
+    // Overlay visibility option
+    if (msg.options && msg.options.hide_overlays) {
+      if (gothicMullions) gothicMullions.style.display = 'none';
+      if (ornateFrame) ornateFrame.style.display = 'none';
+      if (gridSvg) gridSvg.style.display = 'none';
+    }
+  };
+
+  mirrorPc.onconnectionstatechange = () => {
+    console.log(`[Grimoire Display: ${currentScreen}] WebRTC Peer Connection State: ${mirrorPc.connectionState}`);
+    if (mirrorPc.connectionState === 'disconnected' || mirrorPc.connectionState === 'failed' || mirrorPc.connectionState === 'closed') {
+      stopMirroringDisplay();
+    }
+  };
+
+  try {
+    await mirrorPc.setRemoteDescription(new RTCSessionDescription(msg.sdp));
+    const answer = await mirrorPc.createAnswer();
+    await mirrorPc.setLocalDescription(answer);
+
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({
+        action: "WEBRTC_SIGNAL",
+        target_id: msg.sender_id,
+        target_screen: currentScreen,
+        signal_type: "answer",
+        sdp: mirrorPc.localDescription
+      }));
+    }
+  } catch (err) {
+    console.error(`[Grimoire Display: ${currentScreen}] WebRTC offer error:`, err);
+  }
+}
+
+async function handleMirrorCandidate(msg) {
+  if (mirrorPc && msg.candidate) {
+    try {
+      await mirrorPc.addIceCandidate(new RTCIceCandidate(msg.candidate));
+    } catch (e) {
+      console.warn(`[Grimoire Display: ${currentScreen}] Error adding ICE candidate:`, e);
+    }
+  }
+}
+
+function stopMirroringDisplay() {
+  if (!isMirroring && (!mirrorLayer || mirrorLayer.style.display === 'none')) return;
+  console.log(`%c[Grimoire Display: ${currentScreen}] Stopping screen mirror...`, "color: #f97316; font-weight: bold;");
+  isMirroring = false;
+  if (mirrorPc) {
+    try { mirrorPc.close(); } catch(e) {}
+    mirrorPc = null;
+  }
+  if (mirrorVideo) {
+    mirrorVideo.pause();
+    mirrorVideo.srcObject = null;
+  }
+  if (mirrorLayer) mirrorLayer.style.display = 'none';
+  if (mirrorBadge) mirrorBadge.style.display = 'none';
+
+  // Restore current preset overlays & display
+  if (currentDisplayState) {
+    renderDisplay(currentDisplayState, true);
+  }
+}
+
 // WebSocket Connection for Real-Time Sync
 let ws = null;
 function connectWebSocket() {
@@ -432,6 +549,7 @@ function connectWebSocket() {
 
       } else if (msg.event === 'SCENE_CHANGED') {
         console.log(`%c[Grimoire Display: ${currentScreen}] Received SCENE_CHANGED: '${msg.scene ? msg.scene.name : msg.state.scene_name}'`, "color: #f59e0b; font-weight: bold; font-size: 13px;");
+        if (isMirroring) stopMirroringDisplay();
         const displays = msg.state ? msg.state.displays : null;
         if (displays && displays[currentScreen]) {
           renderDisplay(displays[currentScreen]);
@@ -440,7 +558,22 @@ function connectWebSocket() {
       } else if (msg.event === 'DISPLAY_UPDATED') {
         if (msg.screen === currentScreen) {
           console.log(`%c[Grimoire Display: ${currentScreen}] Received DISPLAY_UPDATED:`, "color: #a855f7; font-weight: bold;", msg.display);
+          if (isMirroring) stopMirroringDisplay();
           renderDisplay(msg.display);
+        }
+
+      } else if (msg.event === 'WEBRTC_SIGNAL') {
+        if (msg.target_screen === currentScreen) {
+          if (msg.signal_type === 'offer') {
+            handleMirrorOffer(msg);
+          } else if (msg.signal_type === 'candidate') {
+            handleMirrorCandidate(msg);
+          }
+        }
+
+      } else if (msg.event === 'STOP_MIRROR') {
+        if (msg.screen === currentScreen) {
+          stopMirroringDisplay();
         }
       }
     } catch (e) {

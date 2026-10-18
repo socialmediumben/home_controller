@@ -1,9 +1,9 @@
 /**
- * Spellbook Tablet Controller JavaScript (v1.2.5)
- * Features: Developer Mode, Arcane Preset Editor, Custom Media Uploader, Room & Scene Isolation.
+ * Spellbook Tablet Controller JavaScript (v1.3.0)
+ * Features: Developer Mode, Arcane Preset Editor, Custom Media Uploader, Room & Scene Isolation, Arcane Screen Mirroring.
  */
 
-const CLIENT_VERSION = "1.2.5";
+const CLIENT_VERSION = "1.3.0";
 console.log(`%c[Grimoire Spellbook] Loaded v${CLIENT_VERSION}`, "background: #312e81; color: #fbbf24; font-size: 14px; font-weight: bold; padding: 4px 8px; border-radius: 4px;");
 
 let appState = null;
@@ -191,6 +191,7 @@ function initWebSocket() {
 
       if (msg.event === 'HANDSHAKE_ACK') {
         console.log(`%c[Grimoire Handshake] Handshake acknowledged by Server v${msg.server_version}!`, "background: #065f46; color: #a7f3d0; font-weight: bold; padding: 2px 6px; border-radius: 3px;");
+        myClientId = msg.client_id;
         appState = msg.state;
         presetsList = msg.presets || [];
         allPresets = msg.all_presets || presetsList;
@@ -259,6 +260,20 @@ function initWebSocket() {
           allPresets = msg.all_presets;
         }
         renderSettingsFilterLists();
+
+      } else if (msg.event === 'WEBRTC_SIGNAL') {
+        const screen = msg.target_screen;
+        const session = activeMirrorSessions[screen];
+        if (session) {
+          if (msg.signal_type === 'answer') {
+            session.pc.setRemoteDescription(new RTCSessionDescription(msg.sdp)).catch(e => console.warn(e));
+          } else if (msg.signal_type === 'candidate' && msg.candidate) {
+            try { session.pc.addIceCandidate(new RTCIceCandidate(msg.candidate)); } catch(e) {}
+          }
+        }
+
+      } else if (msg.event === 'MIRROR_STATUS') {
+        handleMirrorStatusUpdate(msg.screen, msg.active);
       }
     } catch (e) {
       console.error('[Grimoire Spellbook] Error parsing WS message:', e);
@@ -1223,6 +1238,176 @@ function copyUploadedUrl() {
   navigator.clipboard.writeText(urlText).then(() => {
     alert("Copied media path to clipboard: " + urlText + "\nYou can paste this directly into any Frame or Table image source field!");
   });
+}
+
+// ==========================================
+// Arcane Screen & Window Mirroring Functions
+// ==========================================
+const mirrorModal = document.getElementById('mirrorModal');
+let myClientId = null;
+const activeMirrorSessions = {
+  window: null,
+  frame: null,
+  table: null
+};
+
+function openMirrorModal(screen = null) {
+  if (screen) {
+    const sel = document.getElementById('modalMirrorScreenSelect');
+    if (sel) sel.value = screen;
+  }
+  updateMirrorModalState();
+  if (mirrorModal) mirrorModal.classList.add('open');
+  playChime(560, 'sine', 0.1);
+}
+
+function closeMirrorModal() {
+  if (mirrorModal) mirrorModal.classList.remove('open');
+}
+
+function updateMirrorModalState() {
+  const sel = document.getElementById('modalMirrorScreenSelect');
+  const targetScreen = sel ? sel.value : 'table';
+  const isCasting = !!activeMirrorSessions[targetScreen];
+
+  const startBtn = document.getElementById('modalMirrorStartBtn');
+  const stopBtn = document.getElementById('modalMirrorStopBtn');
+  const activeStatus = document.getElementById('modalMirrorActiveStatus');
+  const activeScreenName = document.getElementById('modalMirrorActiveScreenName');
+
+  const screenNames = {
+    window: '53" Window TV',
+    frame: 'Picture Frame Monitor',
+    table: 'Tabletop Projector'
+  };
+
+  if (isCasting) {
+    if (startBtn) startBtn.style.display = 'none';
+    if (stopBtn) stopBtn.style.display = 'inline-block';
+    if (activeStatus) {
+      activeStatus.style.display = 'block';
+      if (activeScreenName) activeScreenName.textContent = screenNames[targetScreen] || targetScreen;
+    }
+  } else {
+    if (startBtn) startBtn.style.display = 'inline-block';
+    if (stopBtn) stopBtn.style.display = 'none';
+    if (activeStatus) activeStatus.style.display = 'none';
+  }
+}
+
+if (document.getElementById('modalMirrorScreenSelect')) {
+  document.getElementById('modalMirrorScreenSelect').addEventListener('change', updateMirrorModalState);
+}
+
+async function startModalMirror() {
+  const screen = document.getElementById('modalMirrorScreenSelect')?.value || 'table';
+  const fitMode = document.getElementById('modalMirrorFitSelect')?.value || 'contain';
+  const audioEnabled = document.getElementById('modalMirrorAudioCheck')?.checked || false;
+  const showOverlay = document.getElementById('modalMirrorOverlayCheck')?.checked ?? true;
+
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+    alert("Screen sharing is not supported by this browser, or requires a Secure Context (localhost or HTTPS).");
+    return;
+  }
+
+  try {
+    const stream = await navigator.mediaDevices.getDisplayMedia({
+      video: { cursor: "always", frameRate: { ideal: 60 } },
+      audio: audioEnabled
+    });
+
+    const pc = new RTCPeerConnection({
+      iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' }
+      ]
+    });
+
+    stream.getTracks().forEach(track => {
+      pc.addTrack(track, stream);
+      track.onended = () => {
+        stopModalMirror(screen);
+      };
+    });
+
+    pc.onicecandidate = (event) => {
+      if (event.candidate && ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({
+          action: "WEBRTC_SIGNAL",
+          target_screen: screen,
+          sender_id: myClientId,
+          signal_type: "candidate",
+          candidate: event.candidate
+        }));
+      }
+    };
+
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({
+        action: "WEBRTC_SIGNAL",
+        target_screen: screen,
+        sender_id: myClientId,
+        signal_type: "offer",
+        sdp: pc.localDescription,
+        options: {
+          fit: fitMode,
+          hide_overlays: !showOverlay
+        }
+      }));
+    }
+
+    activeMirrorSessions[screen] = { pc, stream };
+    playChime(660, 'triangle', 0.15);
+    updateMirrorModalState();
+    handleMirrorStatusUpdate(screen, true);
+    closeMirrorModal();
+
+  } catch (err) {
+    if (err.name !== 'NotAllowedError') {
+      alert(`Error starting screen mirror: ${err.message}`);
+    }
+  }
+}
+
+function stopModalMirror(specificScreen = null) {
+  const screen = specificScreen || document.getElementById('modalMirrorScreenSelect')?.value || 'table';
+  const session = activeMirrorSessions[screen];
+  if (session) {
+    try { session.stream.getTracks().forEach(t => t.stop()); } catch (e) {}
+    try { session.pc.close(); } catch (e) {}
+    delete activeMirrorSessions[screen];
+  }
+
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({
+      action: "STOP_MIRROR",
+      screen: screen
+    }));
+  }
+
+  updateMirrorModalState();
+  handleMirrorStatusUpdate(screen, false);
+}
+
+function handleMirrorStatusUpdate(screen, isActive) {
+  const badgeId = screen === 'window' ? 'badgeMirrorWindow' : screen === 'frame' ? 'badgeMirrorFrame' : 'badgeMirrorTable';
+  const badge = document.getElementById(badgeId);
+  if (badge) {
+    if (isActive) {
+      badge.textContent = '● LIVE';
+      badge.style.color = '#ef4444';
+      badge.style.borderColor = '#ef4444';
+      badge.style.background = 'rgba(239, 68, 68, 0.2)';
+    } else {
+      badge.textContent = 'Cast';
+      badge.style.color = '#38bdf8';
+      badge.style.borderColor = '#38bdf8';
+      badge.style.background = 'transparent';
+    }
+  }
 }
 
 // Apply Saved Developer Mode state

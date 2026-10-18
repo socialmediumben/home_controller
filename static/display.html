@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Display</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.ico">
-  <link rel="stylesheet" href="/static/css/display.css?v=1.2.5">
+  <link rel="stylesheet" href="/static/css/display.css?v=1.3.0">
 </head>
 <body>
   <div class="display-viewport">
@@ -15,6 +15,11 @@
     <!-- Crossfading Media Layers -->
     <div id="layerA" class="display-layer active media-container"></div>
     <div id="layerB" class="display-layer media-container"></div>
+
+    <!-- Live WebRTC Mirror Stream Container -->
+    <div id="mirrorLayer" class="display-layer mirror-layer" style="display: none;">
+      <video id="mirrorVideo" class="mirror-video" autoplay playsinline></video>
+    </div>
 
     <!-- Gothic Window Mullions Overlay (53" TV) -->
     <div id="gothicMullions" class="gothic-mullions" style="display: none;">
@@ -44,11 +49,12 @@
 
     <!-- Floating Toolbar (Hover to show) -->
     <div class="display-toolbar">
-      <span id="screenLabel" class="screen-label">v1.2.5 - DISPLAY</span>
+      <span id="mirrorBadge" class="mirror-live-badge" style="display: none;">● LIVE MIRROR</span>
+      <span id="screenLabel" class="screen-label">v1.3.0 - DISPLAY</span>
       <button id="fsBtn" class="toolbar-btn" title="Toggle Fullscreen">⛶ Fullscreen</button>
     </div>
   </div>
 
-  <script src="/static/js/display.js?v=1.2.5"></script>
+  <script src="/static/js/display.js?v=1.3.0"></script>
 </body>
 </html>

@@ -10,6 +10,7 @@ import json
 import logging
 import os
 import socket
+import uuid
 from typing import Any, Dict, List, Optional
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, UploadFile, File
 from fastapi.responses import HTMLResponse, FileResponse
@@ -31,7 +32,7 @@ if not os.path.exists(FAVICON_PATH):
     FAVICON_PATH = os.path.join(STATIC_DIR, "favicon.svg")
 os.makedirs(UPLOADS_DIR, exist_ok=True)
 
-APP_VERSION = "1.2.5"
+APP_VERSION = "1.3.0"
 
 # Helper to get local LAN IP address
 def get_local_ip() -> str:
@@ -133,9 +134,11 @@ class ConnectionManager:
         # Maps websocket -> client_info dict
         self.clients: Dict[WebSocket, Dict[str, Any]] = {}
 
-    async def connect(self, websocket: WebSocket):
+    async def connect(self, websocket: WebSocket) -> str:
         await websocket.accept()
-        self.clients[websocket] = {"type": "unknown", "version": "unknown"}
+        client_id = f"client_{uuid.uuid4().hex[:8]}"
+        self.clients[websocket] = {"client_id": client_id, "type": "unknown", "version": "unknown"}
+        return client_id
 
     def set_client_type(self, websocket: WebSocket, client_type: str, version: str):
         if websocket in self.clients:
@@ -143,10 +146,34 @@ class ConnectionManager:
             self.clients[websocket]["version"] = version
         logger.info(f"Handshake registered: {client_type} (v{version}). Total peers: {len(self.clients)}")
 
+    def get_client_id(self, websocket: WebSocket) -> str:
+        return self.clients.get(websocket, {}).get("client_id", "")
+
     def disconnect(self, websocket: WebSocket):
         client_info = self.clients.pop(websocket, None)
         c_type = client_info.get("type", "unknown") if client_info else "unknown"
         logger.info(f"Client disconnected: {c_type}. Remaining peers: {len(self.clients)}")
+
+    async def send_to_id(self, client_id: str, message: dict) -> bool:
+        for ws, info in list(self.clients.items()):
+            if info.get("client_id") == client_id:
+                try:
+                    await ws.send_json(message)
+                    return True
+                except Exception:
+                    pass
+        return False
+
+    async def send_to_type(self, client_type: str, message: dict) -> int:
+        count = 0
+        for ws, info in list(self.clients.items()):
+            if info.get("type") == client_type:
+                try:
+                    await ws.send_json(message)
+                    count += 1
+                except Exception:
+                    pass
+        return count
 
     def get_peer_status(self) -> Dict[str, Any]:
         screens = {"window": False, "frame": False, "table": False}
@@ -494,7 +521,7 @@ async def upload_media(file: UploadFile = File(...)):
 # WebSocket Endpoint with Explicit Handshake & Peer Status Broadcast
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
-    await manager.connect(websocket)
+    client_id = await manager.connect(websocket)
     port = config.get("server", {}).get("port", 8088)
 
     try:
@@ -515,6 +542,7 @@ async def websocket_endpoint(websocket: WebSocket):
                         "event": "HANDSHAKE_ACK",
                         "server_version": APP_VERSION,
                         "client_type": client_type,
+                        "client_id": client_id,
                         "state": full_state["current_state"],
                         "presets": full_state["presets"],
                         "all_presets": full_state["all_presets"],
@@ -568,6 +596,50 @@ async def websocket_endpoint(websocket: WebSocket):
                     screen = msg.get("screen")
                     req = DisplayUpdateRequest(**msg.get("display", {}))
                     await update_display(screen, req)
+
+                elif action == "WEBRTC_SIGNAL":
+                    target_screen = msg.get("target_screen")
+                    target_id = msg.get("target_id")
+                    sender_id = msg.get("sender_id") or client_id
+                    signal_type = msg.get("signal_type")
+
+                    forward_msg = {
+                        "event": "WEBRTC_SIGNAL",
+                        "sender_id": sender_id,
+                        "target_screen": target_screen,
+                        "signal_type": signal_type,
+                        "sdp": msg.get("sdp"),
+                        "candidate": msg.get("candidate"),
+                        "options": msg.get("options", {})
+                    }
+
+                    if signal_type == "offer":
+                        logger.info(f"--> [WEBRTC OFFER] From {sender_id} to display_{target_screen}")
+                        await manager.send_to_type(f"display_{target_screen}", forward_msg)
+                        await manager.broadcast({
+                            "event": "MIRROR_STATUS",
+                            "screen": target_screen,
+                            "active": True,
+                            "sender_id": sender_id
+                        })
+                    elif target_id:
+                        await manager.send_to_id(target_id, forward_msg)
+                    elif target_screen:
+                        await manager.send_to_type(f"display_{target_screen}", forward_msg)
+
+                elif action == "STOP_MIRROR":
+                    screen = msg.get("screen")
+                    logger.info(f"--> [STOP MIRROR] Screen: {screen}")
+                    if screen:
+                        await manager.send_to_type(f"display_{screen}", {
+                            "event": "STOP_MIRROR",
+                            "screen": screen
+                        })
+                        await manager.broadcast({
+                            "event": "MIRROR_STATUS",
+                            "screen": screen,
+                            "active": False
+                        })
 
                 elif action == "PING":
                     await websocket.send_json({"event": "PONG", "version": APP_VERSION})
