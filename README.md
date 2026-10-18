@@ -1,4 +1,4 @@
-# 📜 The Wizard's Grimoire: D&D Game Room & Display Controller (v1.3.5)
+# 📜 The Wizard's Grimoire: D&D Game Room & Display Controller (v1.3.6)
 
 A unified local controller for a Dungeons & Dragons game room decorated as a wizard's study. Controls **three independent thematic displays** and **smart lighting (Home Depot Hubspace & Google Home)** from a tablet disguised as a magical spellbook.
 

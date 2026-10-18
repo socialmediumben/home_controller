@@ -26,6 +26,7 @@ logger = logging.getLogger("GrimoireServer")
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 CONFIG_PATH = os.path.join(BASE_DIR, "config.json")
 SECRETS_PATH = os.path.join(BASE_DIR, "secrets.json")
+CUSTOM_PRESETS_PATH = os.path.join(BASE_DIR, "custom_presets.json")
 STATIC_DIR = os.path.join(BASE_DIR, "static")
 UPLOADS_DIR = os.path.join(STATIC_DIR, "media", "uploads")
 FAVICON_PATH = os.path.join(STATIC_DIR, "grimoire.ico")
@@ -33,7 +34,7 @@ if not os.path.exists(FAVICON_PATH):
     FAVICON_PATH = os.path.join(STATIC_DIR, "favicon.svg")
 os.makedirs(UPLOADS_DIR, exist_ok=True)
 
-APP_VERSION = "1.3.5"
+APP_VERSION = "1.3.6"
 
 # Helper to get local LAN IP address
 def get_local_ip() -> str:
@@ -136,6 +137,24 @@ def save_secrets(sec: Dict[str, Any]):
     except Exception as e:
         logger.error(f"Error saving secrets: {e}")
 
+def load_custom_presets() -> List[Dict[str, Any]]:
+    if os.path.exists(CUSTOM_PRESETS_PATH):
+        try:
+            with open(CUSTOM_PRESETS_PATH, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                if isinstance(data, list):
+                    return data
+        except Exception as e:
+            logger.error(f"Error reading custom_presets.json: {e}")
+    return []
+
+def save_custom_presets(presets: List[Dict[str, Any]]):
+    try:
+        with open(CUSTOM_PRESETS_PATH, "w", encoding="utf-8") as f:
+            json.dump(presets, f, indent=2)
+    except Exception as e:
+        logger.error(f"Error saving custom_presets.json: {e}")
+
 def load_config() -> Dict[str, Any]:
     cfg: Dict[str, Any] = {}
     if os.path.exists(CONFIG_PATH):
@@ -144,6 +163,15 @@ def load_config() -> Dict[str, Any]:
                 cfg = json.load(f)
         except Exception as e:
             logger.error(f"Error reading config: {e}")
+
+    # Load and merge custom presets so user creations/modifications persist across updates
+    custom_presets = load_custom_presets()
+    if custom_presets:
+        cfg.setdefault("presets", [])
+        preset_map = {p["id"]: p for p in cfg["presets"]}
+        for cp in custom_presets:
+            preset_map[cp["id"]] = cp
+        cfg["presets"] = list(preset_map.values())
 
     secrets = load_secrets()
     # Merge secrets into runtime config for LightController
@@ -465,14 +493,32 @@ async def activate_scene(req: SceneSelectRequest):
 @app.post("/api/preset")
 async def upsert_preset(req: PresetUpsertRequest):
     presets = config.setdefault("presets", [])
-    existing = next((p for p in presets if p["id"] == req.id), None)
     preset_data = req.dict()
-    if existing:
-        existing.update(preset_data)
+
+    idx = next((i for i, p in enumerate(presets) if p["id"] == req.id), None)
+    if idx is not None:
+        presets[idx] = preset_data
         logger.info(f"Updated preset '{req.name}' ({req.id})")
     else:
         presets.append(preset_data)
         logger.info(f"Created new preset '{req.name}' ({req.id})")
+
+    # Persist in custom_presets.json so git pulls/updates never wipe it
+    custom_presets = load_custom_presets()
+    c_idx = next((i for i, p in enumerate(custom_presets) if p["id"] == req.id), None)
+    if c_idx is not None:
+        custom_presets[c_idx] = preset_data
+    else:
+        custom_presets.append(preset_data)
+    save_custom_presets(custom_presets)
+
+    # If selected_scenes filter is active, automatically include the preset so it's not hidden
+    selected_scenes = config.get("selected_scenes")
+    if isinstance(selected_scenes, list) and len(selected_scenes) > 0:
+        if req.id not in selected_scenes:
+            selected_scenes.append(req.id)
+            config["selected_scenes"] = selected_scenes
+
     save_config(config)
 
     full_state = await get_state()
@@ -480,7 +526,8 @@ async def upsert_preset(req: PresetUpsertRequest):
         "event": "PRESETS_UPDATED",
         "version": APP_VERSION,
         "presets": full_state["presets"],
-        "all_presets": full_state["all_presets"]
+        "all_presets": full_state["all_presets"],
+        "selected_scenes": full_state["selected_scenes"]
     })
     return {"status": "ok", "preset": preset_data}
 
@@ -488,13 +535,24 @@ async def upsert_preset(req: PresetUpsertRequest):
 async def delete_preset(preset_id: str):
     presets = config.get("presets", [])
     config["presets"] = [p for p in presets if p["id"] != preset_id]
+
+    custom_presets = load_custom_presets()
+    custom_presets = [p for p in custom_presets if p["id"] != preset_id]
+    save_custom_presets(custom_presets)
+
+    selected_scenes = config.get("selected_scenes")
+    if isinstance(selected_scenes, list) and preset_id in selected_scenes:
+        selected_scenes.remove(preset_id)
+        config["selected_scenes"] = selected_scenes
+
     save_config(config)
     full_state = await get_state()
     await manager.broadcast({
         "event": "PRESETS_UPDATED",
         "version": APP_VERSION,
         "presets": full_state["presets"],
-        "all_presets": full_state["all_presets"]
+        "all_presets": full_state["all_presets"],
+        "selected_scenes": full_state["selected_scenes"]
     })
     return {"status": "ok", "deleted": preset_id}
 

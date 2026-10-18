@@ -1,9 +1,9 @@
 /**
- * Spellbook Tablet Controller JavaScript (v1.3.5)
+ * Spellbook Tablet Controller JavaScript (v1.3.6)
  * Features: Developer Mode, Arcane Preset Editor, Custom Media Uploader, Room & Scene Isolation, Arcane Screen Mirroring.
  */
 
-const CLIENT_VERSION = "1.3.5";
+const CLIENT_VERSION = "1.3.6";
 let currentTableGridSize = 22;
 console.log(`%c[Grimoire Spellbook] Loaded v${CLIENT_VERSION}`, "background: #312e81; color: #fbbf24; font-size: 14px; font-weight: bold; padding: 4px 8px; border-radius: 4px;");
 
@@ -266,6 +266,9 @@ function initWebSocket() {
         }
         if (msg.all_presets) {
           allPresets = msg.all_presets;
+        }
+        if (msg.selected_scenes) {
+          selectedScenes = msg.selected_scenes;
         }
         renderSettingsFilterLists();
 
@@ -1076,14 +1079,37 @@ function confirmRoll20() {
 // ==========================================
 // Preset Editor Modal (Developer Mode)
 // ==========================================
+let presetNameInputBound = false;
+function bindPresetNameKeySync() {
+  if (presetNameInputBound) return;
+  const nameInp = document.getElementById('presetNameInput');
+  const keyInp = document.getElementById('presetKeyInput');
+  if (nameInp && keyInp) {
+    nameInp.addEventListener('input', () => {
+      const isEdit = !!document.getElementById('editPresetId').value;
+      if (!isEdit && keyInp.dataset.manual !== 'true') {
+        const slug = nameInp.value.trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+        keyInp.value = slug;
+      }
+    });
+    keyInp.addEventListener('input', () => {
+      keyInp.dataset.manual = 'true';
+    });
+    presetNameInputBound = true;
+  }
+}
+
 function openPresetEditorModal(presetId = null) {
   if (!presetEditorModal) return;
+  bindPresetNameKeySync();
+
   const isEdit = !!presetId;
   document.getElementById('presetEditorTitle').textContent = isEdit ? '✨ Edit Arcane Preset' : '✨ Create Arcane Preset';
   document.getElementById('editPresetId').value = presetId || '';
 
   const keyInput = document.getElementById('presetKeyInput');
   keyInput.disabled = isEdit;
+  keyInput.dataset.manual = isEdit ? 'true' : 'false';
 
   let preset = null;
   if (isEdit) {
@@ -1125,23 +1151,23 @@ function openPresetEditorModal(presetId = null) {
 
   } else {
     // Defaults for new preset
-    keyInput.value = 'scene_' + Math.random().toString(36).substr(2, 5);
-    document.getElementById('presetNameInput').value = 'New Arcane Chamber';
+    keyInput.value = '';
+    document.getElementById('presetNameInput').value = '';
     document.getElementById('presetDescInput').value = 'Custom atmospheric environment created in Developer Mode.';
     document.getElementById('presetLightColor').value = '#d4a34b';
     document.getElementById('presetBrightSlider').value = 75;
     document.getElementById('presetBrightVal').textContent = '75';
     document.getElementById('presetLightEffect').value = 'candle_flicker';
-    document.getElementById('presetWindowEffect').value = 'rain_storm';
+    document.getElementById('presetWindowEffect').value = 'sunny_meadow';
     document.getElementById('presetWindowMullions').checked = true;
-    document.getElementById('presetWindowTitle').value = 'Rain on Castle Glass';
-    document.getElementById('presetFrameTitle').value = 'Crypt Guardian';
-    document.getElementById('presetFrameCaption').value = 'A sentinel in the deep';
-    document.getElementById('presetFrameSrc').value = '/static/media/frames/skeleton.svg';
+    document.getElementById('presetWindowTitle').value = 'Morning Horizon';
+    document.getElementById('presetFrameTitle').value = 'Archmage Portrait';
+    document.getElementById('presetFrameCaption').value = 'Master of the Sanctum';
+    document.getElementById('presetFrameSrc').value = '/static/media/frames/archmage.svg';
     document.getElementById('presetFrameOrnate').checked = true;
-    document.getElementById('presetTableTitle').value = 'The Tomb of Kings';
-    document.getElementById('presetTableCaption').value = 'Deep catacombs map';
-    document.getElementById('presetTableSrc').value = '/static/media/tables/crypt.svg';
+    document.getElementById('presetTableTitle').value = 'High Sun Citadel';
+    document.getElementById('presetTableCaption').value = 'Battlemap courtyard';
+    document.getElementById('presetTableSrc').value = '/static/media/tables/library.svg';
     document.getElementById('presetTableGrid').checked = true;
     document.getElementById('presetTableGridSize').value = currentTableGridSize || 22;
   }
@@ -1154,14 +1180,21 @@ function closePresetEditorModal() {
 }
 
 function savePresetForm() {
-  const id = document.getElementById('presetKeyInput').value.trim().toLowerCase().replace(/\s+/g, '_');
   const name = document.getElementById('presetNameInput').value.trim();
-  const description = document.getElementById('presetDescInput').value.trim();
-
-  if (!id || !name) {
-    alert("Please enter both a Preset ID and Name.");
+  if (!name) {
+    alert("Please enter a Title / Name for this preset (e.g. Daylight).");
     return;
   }
+
+  let id = document.getElementById('presetKeyInput').value.trim().toLowerCase().replace(/[^a-z0-9_]/g, '_').replace(/^_+|_+$/g, '');
+  if (!id) {
+    id = name.toLowerCase().replace(/[^a-z0-9_]/g, '_').replace(/^_+|_+$/g, '');
+  }
+  if (!id) {
+    id = 'scene_' + Math.random().toString(36).substr(2, 6);
+  }
+
+  const description = document.getElementById('presetDescInput').value.trim();
 
   const payload = {
     id: id,
@@ -1169,16 +1202,16 @@ function savePresetForm() {
     description: description,
     lighting: {
       power: true,
-      brightness: parseInt(document.getElementById('presetBrightSlider').value, 10),
-      color: document.getElementById('presetLightColor').value,
-      effect: document.getElementById('presetLightEffect').value
+      brightness: parseInt(document.getElementById('presetBrightSlider').value, 10) || 75,
+      color: document.getElementById('presetLightColor').value || '#d4a34b',
+      effect: document.getElementById('presetLightEffect').value || 'none'
     },
     displays: {
       window: {
         id: `${id}_window`,
         title: document.getElementById('presetWindowTitle').value.trim() || name,
         type: "canvas_effect",
-        effect_type: document.getElementById('presetWindowEffect').value,
+        effect_type: document.getElementById('presetWindowEffect').value || 'sunny_meadow',
         src: "",
         mullions_enabled: document.getElementById('presetWindowMullions').checked
       },
@@ -1207,13 +1240,19 @@ function savePresetForm() {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)
   })
-  .then(r => r.json())
+  .then(async r => {
+    if (!r.ok) {
+      const err = await r.json().catch(() => ({ detail: r.statusText }));
+      throw new Error(err.detail || r.statusText);
+    }
+    return r.json();
+  })
   .then(res => {
     closePresetEditorModal();
     playChime(660, 'triangle', 0.15);
     fetchInitialState();
   })
-  .catch(err => alert("Error saving preset: " + err));
+  .catch(err => alert("Error saving preset: " + err.message));
 }
 
 function deletePreset(presetId) {
@@ -1222,12 +1261,18 @@ function deletePreset(presetId) {
   fetch(`/api/preset/${presetId}`, {
     method: 'DELETE'
   })
-  .then(r => r.json())
+  .then(async r => {
+    if (!r.ok) {
+      const err = await r.json().catch(() => ({ detail: r.statusText }));
+      throw new Error(err.detail || r.statusText);
+    }
+    return r.json();
+  })
   .then(res => {
     playChime(330, 'sawtooth', 0.15);
     fetchInitialState();
   })
-  .catch(err => alert("Error deleting preset: " + err));
+  .catch(err => alert("Error deleting preset: " + err.message));
 }
 
 // ==========================================

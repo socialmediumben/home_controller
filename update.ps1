@@ -92,11 +92,12 @@ if (-not $UpdatedViaGit) {
         $items = Get-ChildItem -Path $extractedRoot -Recurse
         foreach ($item in $items) {
             $relative = $item.FullName.Substring($extractedRoot.Length).TrimStart("\", "/")
-            # Never overwrite secrets.json or existing config.json
-            if ($relative -ieq "secrets.json") { continue }
+            $targetPath = Join-Path $AppDir $relative
+
+            # Never overwrite secrets.json, custom_presets.json, or existing config.json
+            if ($relative -ieq "secrets.json" -or $relative -ieq "custom_presets.json") { continue }
             if ($relative -ieq "config.json" -and (Test-Path $targetPath)) { continue }
 
-            $targetPath = Join-Path $AppDir $relative
             if ($item.PSIsContainer) {
                 if (-not (Test-Path $targetPath)) { New-Item -ItemType Directory -Path $targetPath -Force | Out-Null }
             } else {
