@@ -1,9 +1,9 @@
 /**
- * Spellbook Tablet Controller JavaScript (v1.3.0)
+ * Spellbook Tablet Controller JavaScript (v1.3.1)
  * Features: Developer Mode, Arcane Preset Editor, Custom Media Uploader, Room & Scene Isolation, Arcane Screen Mirroring.
  */
 
-const CLIENT_VERSION = "1.3.0";
+const CLIENT_VERSION = "1.3.1";
 console.log(`%c[Grimoire Spellbook] Loaded v${CLIENT_VERSION}`, "background: #312e81; color: #fbbf24; font-size: 14px; font-weight: bold; padding: 4px 8px; border-radius: 4px;");
 
 let appState = null;
@@ -266,9 +266,21 @@ function initWebSocket() {
         const session = activeMirrorSessions[screen];
         if (session) {
           if (msg.signal_type === 'answer') {
-            session.pc.setRemoteDescription(new RTCSessionDescription(msg.sdp)).catch(e => console.warn(e));
+            session.pc.setRemoteDescription(new RTCSessionDescription(msg.sdp)).then(async () => {
+              if (session.pendingCandidates) {
+                while (session.pendingCandidates.length > 0) {
+                  const cand = session.pendingCandidates.shift();
+                  try { await session.pc.addIceCandidate(new RTCIceCandidate(cand)); } catch(e) {}
+                }
+              }
+            }).catch(e => console.warn('[Grimoire Spellbook] Answer SDP error:', e));
           } else if (msg.signal_type === 'candidate' && msg.candidate) {
-            try { session.pc.addIceCandidate(new RTCIceCandidate(msg.candidate)); } catch(e) {}
+            if (session.pc.remoteDescription && session.pc.remoteDescription.type) {
+              try { session.pc.addIceCandidate(new RTCIceCandidate(msg.candidate)); } catch(e) {}
+            } else {
+              session.pendingCandidates = session.pendingCandidates || [];
+              session.pendingCandidates.push(msg.candidate);
+            }
           }
         }
 
@@ -291,6 +303,13 @@ function initWebSocket() {
     setTimeout(initWebSocket, 2500);
   };
 }
+
+// Heartbeat PING every 15s to keep WebSocket connection alive
+setInterval(() => {
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({ action: "PING" }));
+  }
+}, 15000);
 
 // Render Presets
 const sceneIcons = {
@@ -1319,9 +1338,36 @@ async function startModalMirror() {
     const pc = new RTCPeerConnection({
       iceServers: [
         { urls: 'stun:stun.l.google.com:19302' },
-        { urls: 'stun:stun1.l.google.com:19302' }
+        { urls: 'stun:stun1.l.google.com:19302' },
+        { urls: 'stun:stun2.l.google.com:19302' }
       ]
     });
+
+    let disconnectTimeout = null;
+    pc.onconnectionstatechange = () => {
+      console.log(`[Grimoire Spellbook] Mirror PC (${screen}) connection state: ${pc.connectionState}`);
+      if (pc.connectionState === 'connected') {
+        if (disconnectTimeout) {
+          clearTimeout(disconnectTimeout);
+          disconnectTimeout = null;
+        }
+      } else if (pc.connectionState === 'disconnected') {
+        if (!disconnectTimeout) {
+          disconnectTimeout = setTimeout(() => {
+            if (pc && pc.connectionState === 'disconnected') {
+              console.warn(`[Grimoire Spellbook] Mirror PC (${screen}) disconnect timed out.`);
+              stopModalMirror(screen);
+            }
+          }, 15000);
+        }
+      } else if (pc.connectionState === 'failed' || pc.connectionState === 'closed') {
+        if (disconnectTimeout) {
+          clearTimeout(disconnectTimeout);
+          disconnectTimeout = null;
+        }
+        stopModalMirror(screen);
+      }
+    };
 
     stream.getTracks().forEach(track => {
       pc.addTrack(track, stream);

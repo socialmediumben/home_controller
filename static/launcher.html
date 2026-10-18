@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Grimoire Display Launcher v1.2.5</title>
+  <title>Grimoire Display Launcher v1.3.1</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.ico">
-  <link rel="stylesheet" href="/static/css/spellbook.css?v=1.2.5">
+  <link rel="stylesheet" href="/static/css/spellbook.css?v=1.3.1">
   <style>
     .launcher-container {
       max-width: 1300px;
@@ -134,7 +134,7 @@
         <div>
           <div style="display: flex; align-items: center; gap: 8px;">
             <h1 class="book-title">GRIMOIRE MULTI-MONITOR LAUNCHER</h1>
-            <span id="launcherVersionBadge" class="version-tag">v1.2.5</span>
+            <span id="launcherVersionBadge" class="version-tag">v1.3.1</span>
           </div>
           <div class="subtitle">OptiPlex Mini PC Display Manager</div>
         </div>
@@ -217,7 +217,7 @@
   </div>
 
   <script>
-    const LAUNCHER_VERSION = "1.3.0";
+    const LAUNCHER_VERSION = "1.3.1";
     console.log(`%c[Grimoire Launcher] Loaded v${LAUNCHER_VERSION}`, "background: #1e3a8a; color: #93c5fd; font-weight: bold; font-size: 14px; padding: 4px 8px; border-radius: 4px;");
 
     // Fetch initial state via HTTP
@@ -311,16 +311,23 @@
       } catch (e) {}
     };
 
+    // Heartbeat PING every 15s to maintain connection
+    setInterval(() => {
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ action: "PING" }));
+      }
+    }, 15000);
+
     function openWindowScreen(e) {
-      window.open('/display/window?v=1.3.0', 'GrimoireWindow', 'width=1920,height=1080,menubar=no,toolbar=no');
+      window.open('/display/window?v=1.3.1', 'GrimoireWindow', 'width=1920,height=1080,menubar=no,toolbar=no');
       e.preventDefault();
     }
     function openFrameScreen(e) {
-      window.open('/display/frame?v=1.3.0', 'GrimoireFrame', 'width=1080,height=1920,menubar=no,toolbar=no');
+      window.open('/display/frame?v=1.3.1', 'GrimoireFrame', 'width=1080,height=1920,menubar=no,toolbar=no');
       e.preventDefault();
     }
     function openTableScreen(e) {
-      window.open('/display/table?v=1.3.0', 'GrimoireTable', 'width=1920,height=1080,menubar=no,toolbar=no');
+      window.open('/display/table?v=1.3.1', 'GrimoireTable', 'width=1920,height=1080,menubar=no,toolbar=no');
       e.preventDefault();
     }
   </script>

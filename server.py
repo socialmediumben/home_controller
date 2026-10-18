@@ -32,7 +32,7 @@ if not os.path.exists(FAVICON_PATH):
     FAVICON_PATH = os.path.join(STATIC_DIR, "favicon.svg")
 os.makedirs(UPLOADS_DIR, exist_ok=True)
 
-APP_VERSION = "1.3.0"
+APP_VERSION = "1.3.1"
 
 # Helper to get local LAN IP address
 def get_local_ip() -> str:
