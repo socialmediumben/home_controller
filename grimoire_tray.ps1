@@ -45,7 +45,7 @@ if (-not $CreatedNew) {
             Start-Sleep -Seconds 1
             $waitCount--
         }
-        Start-Process "http://localhost:8088/launcher"
+        Start-Process "https://localhost:8088/launcher"
     }
     exit 0
 }
@@ -193,14 +193,14 @@ $launcherItem = New-Object System.Windows.Forms.ToolStripMenuItem
 $launcherItem.Text = "Open Display Launcher"
 $launcherItem.Font = New-Object System.Drawing.Font($launcherItem.Font, [System.Drawing.FontStyle]::Bold)
 $launcherItem.Add_Click({
-    Start-Process "http://localhost:8088/launcher"
+    Start-Process "https://localhost:8088/launcher"
 })
 $contextMenu.Items.Add($launcherItem) | Out-Null
 
 $spellbookItem = New-Object System.Windows.Forms.ToolStripMenuItem
 $spellbookItem.Text = "Open Tablet Spellbook"
 $spellbookItem.Add_Click({
-    Start-Process "http://localhost:8088/spellbook"
+    Start-Process "https://localhost:8088/spellbook"
 })
 $contextMenu.Items.Add($spellbookItem) | Out-Null
 
@@ -237,7 +237,7 @@ $notifyIcon.Visible = $true
 
 # Double click to open Display Launcher
 $notifyIcon.Add_DoubleClick({
-    Start-Process "http://localhost:8088/launcher"
+    Start-Process "https://localhost:8088/launcher"
 })
 
 Write-TrayLog "System tray icon initialized."
@@ -249,7 +249,7 @@ if ($OpenBrowser) {
         Start-Sleep -Seconds 1
         $waitCount--
     }
-    Start-Process "http://localhost:8088/launcher"
+    Start-Process "https://localhost:8088/launcher"
 }
 
 # Run Windows message loop

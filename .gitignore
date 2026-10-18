@@ -14,6 +14,8 @@ ENV/
 
 # Sensitive credentials & secrets (NEVER commit passwords!)
 secrets.json
+cert.pem
+key.pem
 
 # Operating System & Editor artifacts
 .DS_Store

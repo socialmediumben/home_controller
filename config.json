@@ -2,7 +2,8 @@
   "version": "1.3.0",
   "server": {
     "host": "0.0.0.0",
-    "port": 8088
+    "port": 8088,
+    "ssl": true
   },
   "hubspace": {
     "enabled": true,

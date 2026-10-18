@@ -228,7 +228,8 @@
         if (data.network && data.network.local_ip) {
           const ip = data.network.local_ip;
           const port = data.network.port || 8088;
-          document.getElementById('tabletUrlDisplay').textContent = `http://${ip}:${port}/spellbook`;
+          const proto = window.location.protocol || 'https:';
+          document.getElementById('tabletUrlDisplay').textContent = `${proto}//${ip}:${port}/spellbook`;
         }
         if (data.version) {
           document.getElementById('launcherVersionBadge').textContent = `v${LAUNCHER_VERSION} (Server v${data.version})`;

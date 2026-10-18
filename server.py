@@ -45,6 +45,68 @@ def get_local_ip() -> str:
     except Exception:
         return "127.0.0.1"
 
+def ensure_ssl_certificates(local_ip: str) -> tuple[str, str]:
+    cert_path = os.path.join(BASE_DIR, "cert.pem")
+    key_path = os.path.join(BASE_DIR, "key.pem")
+
+    if os.path.exists(cert_path) and os.path.exists(key_path):
+        return cert_path, key_path
+
+    logger.info("Generating self-signed SSL certificate for HTTPS (Secure Context for screen sharing)...")
+    import datetime
+    import ipaddress
+    from cryptography import x509
+    from cryptography.x509.oid import NameOID
+    from cryptography.hazmat.primitives import hashes
+    from cryptography.hazmat.primitives.asymmetric import rsa
+    from cryptography.hazmat.primitives import serialization
+
+    key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    subject = issuer = x509.Name([
+        x509.NameAttribute(NameOID.COMMON_NAME, u"The Wizard's Grimoire"),
+        x509.NameAttribute(NameOID.ORGANIZATION_NAME, u"Grimoire Game Room")
+    ])
+
+    san_list = [
+        x509.DNSName(u"localhost"),
+        x509.IPAddress(ipaddress.IPv4Address("127.0.0.1"))
+    ]
+    if local_ip and local_ip != "127.0.0.1":
+        try:
+            san_list.append(x509.IPAddress(ipaddress.IPv4Address(local_ip)))
+        except Exception:
+            pass
+
+    cert = x509.CertificateBuilder().subject_name(
+        subject
+    ).issuer_name(
+        issuer
+    ).public_key(
+        key.public_key()
+    ).serial_number(
+        x509.random_serial_number()
+    ).not_valid_before(
+        datetime.datetime.now(datetime.timezone.utc)
+    ).not_valid_after(
+        datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=3650)
+    ).add_extension(
+        x509.SubjectAlternativeName(san_list),
+        critical=False
+    ).sign(key, hashes.SHA256())
+
+    with open(key_path, "wb") as f:
+        f.write(key.private_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PrivateFormat.TraditionalOpenSSL,
+            encryption_algorithm=serialization.NoEncryption()
+        ))
+
+    with open(cert_path, "wb") as f:
+        f.write(cert.public_bytes(serialization.Encoding.PEM))
+
+    logger.info(f"SSL certificate generated successfully at: {cert_path}")
+    return cert_path, key_path
+
 def load_secrets() -> Dict[str, Any]:
     if os.path.exists(SECRETS_PATH):
         try:
@@ -216,7 +278,9 @@ async def startup_event():
         effect=initial_light.get("effect", "candle_flicker")
     )
     port = config.get("server", {}).get("port", 8088)
-    logger.info(f"Grimoire Server v{APP_VERSION} ready! Tablet URL: http://{get_local_ip()}:{port}/spellbook")
+    ssl_enabled = config.get("server", {}).get("ssl", True)
+    proto = "https" if ssl_enabled else "http"
+    logger.info(f"Grimoire Server v{APP_VERSION} ready! Tablet URL: {proto}://{get_local_ip()}:{port}/spellbook")
 
 # Request Models
 class SceneSelectRequest(BaseModel):
@@ -310,6 +374,8 @@ async def get_state():
         "network": {
             "local_ip": get_local_ip(),
             "port": port,
+            "ssl": config.get("server", {}).get("ssl", True),
+            "protocol": "https" if config.get("server", {}).get("ssl", True) else "http",
             "connected_clients": len(manager.clients)
         },
         "peers": manager.get_peer_status()
@@ -683,5 +749,28 @@ app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 if __name__ == "__main__":
     import uvicorn
     port = config.get("server", {}).get("port", 8088)
-    uvicorn.run(app, host="0.0.0.0", port=port)
+    ssl_enabled = config.get("server", {}).get("ssl", True)
+    local_ip = get_local_ip()
+
+    if ssl_enabled:
+        try:
+            cert_path, key_path = ensure_ssl_certificates(local_ip)
+            logger.info("=" * 64)
+            logger.info(f"  GRIMOIRE SECURE HTTPS SERVER ACTIVE (v{APP_VERSION})")
+            logger.info(f"  -> Tablet:   https://{local_ip}:{port}/spellbook")
+            logger.info(f"  -> Launcher: https://localhost:{port}/launcher")
+            logger.info("=" * 64)
+            uvicorn.run(
+                app,
+                host="0.0.0.0",
+                port=port,
+                ssl_keyfile=key_path,
+                ssl_certfile=cert_path
+            )
+        except Exception as e:
+            logger.error(f"Failed to start with SSL: {e}. Falling back to standard HTTP...")
+            uvicorn.run(app, host="0.0.0.0", port=port)
+    else:
+        logger.info(f"Grimoire HTTP Server running on http://{local_ip}:{port}/spellbook")
+        uvicorn.run(app, host="0.0.0.0", port=port)
 

@@ -39,16 +39,17 @@ A unified local controller for a Dungeons & Dragons game room decorated as a wiz
 ## ⚡ Quick Start
 
 1. **Double-click `run.bat`** (or open a terminal and run `python server.py`).
-2. The server will start on clean dedicated port **8088** and automatically open the **Display Launcher**:
-   * `http://localhost:8088/launcher`
+2. The server will start on clean dedicated port **8088** (with automatic self-signed HTTPS enabled) and open the **Display Launcher**:
+   * `https://localhost:8088/launcher`
 3. On the launcher page, click the buttons to open the 3 display windows and drag them to each monitor:
-   * **Window TV (53"):** `http://localhost:8088/display/window`
-   * **Picture Frame:** `http://localhost:8088/display/frame`
-   * **Table Projector:** `http://localhost:8088/display/table`
+   * **Window TV (53"):** `https://localhost:8088/display/window`
+   * **Picture Frame:** `https://localhost:8088/display/frame`
+   * **Table Projector:** `https://localhost:8088/display/table`
    * *(Press `F` or double-click any display window to toggle borderless fullscreen!)*
-4. **Connect your Tablet ("Spellbook"):**
-   * Make sure your tablet is on the same home Wi-Fi network.
-   * Open the URL shown in `run.bat` (e.g. `http://192.168.86.250:8088/spellbook`).
+4. **Connect your Tablet or Laptop ("Spellbook"):**
+   * Make sure your tablet/laptop is on the same home Wi-Fi network.
+   * Open the URL shown in `run.bat` (e.g. `https://192.168.12.129:8088/spellbook`).
+   * *(Note: On first load, your browser will display a standard "Connection is not private / Self-Signed" notice. Click **Advanced ➔ Proceed** once. This unlocks the Secure Context required for screen and window mirroring!)*
    * Verify that the top header shows `v1.3.0 ● Synced`!
 
 ---
