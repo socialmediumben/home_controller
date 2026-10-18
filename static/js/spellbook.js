@@ -1,9 +1,9 @@
 /**
- * Spellbook Tablet Controller JavaScript (v1.3.1)
+ * Spellbook Tablet Controller JavaScript (v1.3.2)
  * Features: Developer Mode, Arcane Preset Editor, Custom Media Uploader, Room & Scene Isolation, Arcane Screen Mirroring.
  */
 
-const CLIENT_VERSION = "1.3.1";
+const CLIENT_VERSION = "1.3.2";
 console.log(`%c[Grimoire Spellbook] Loaded v${CLIENT_VERSION}`, "background: #312e81; color: #fbbf24; font-size: 14px; font-weight: bold; padding: 4px 8px; border-radius: 4px;");
 
 let appState = null;
@@ -270,16 +270,37 @@ function initWebSocket() {
               if (session.pendingCandidates) {
                 while (session.pendingCandidates.length > 0) {
                   const cand = session.pendingCandidates.shift();
-                  try { await session.pc.addIceCandidate(new RTCIceCandidate(cand)); } catch(e) {}
+                  try {
+                    if (!cand || !cand.candidate || cand.candidate.trim() === '') {
+                      await session.pc.addIceCandidate(null);
+                    } else {
+                      await session.pc.addIceCandidate(new RTCIceCandidate(cand));
+                    }
+                  } catch(e) {}
                 }
               }
             }).catch(e => console.warn('[Grimoire Spellbook] Answer SDP error:', e));
           } else if (msg.signal_type === 'candidate' && msg.candidate) {
+            let cand = msg.candidate;
+            if (cand && cand.candidate && msg.sender_ip) {
+              cand.candidate = cand.candidate.replace(/[a-zA-Z0-9\-\._]+\.local/g, msg.sender_ip);
+              if (msg.sender_ip !== '127.0.0.1') {
+                cand.candidate = cand.candidate.replace(/\b127\.0\.0\.1\b/g, msg.sender_ip);
+                cand.candidate = cand.candidate.replace(/\b169\.254\.\d{1,3}\.\d{1,3}\b/g, msg.sender_ip);
+              }
+            }
+            const isEndOfCandidates = !cand.candidate || cand.candidate.trim() === '';
             if (session.pc.remoteDescription && session.pc.remoteDescription.type) {
-              try { session.pc.addIceCandidate(new RTCIceCandidate(msg.candidate)); } catch(e) {}
+              try {
+                if (isEndOfCandidates) {
+                  await session.pc.addIceCandidate(null);
+                } else {
+                  await session.pc.addIceCandidate(new RTCIceCandidate(cand));
+                }
+              } catch(e) {}
             } else {
               session.pendingCandidates = session.pendingCandidates || [];
-              session.pendingCandidates.push(msg.candidate);
+              session.pendingCandidates.push(cand);
             }
           }
         }
@@ -1366,6 +1387,13 @@ async function startModalMirror() {
           disconnectTimeout = null;
         }
         stopModalMirror(screen);
+      }
+    };
+
+    pc.oniceconnectionstatechange = () => {
+      console.log(`[Grimoire Spellbook] Mirror PC (${screen}) ICE state: ${pc.iceConnectionState}`);
+      if (pc.iceConnectionState === 'connected' || pc.iceConnectionState === 'completed') {
+        handleMirrorStatusUpdate(screen, true);
       }
     };
 

@@ -9,6 +9,7 @@ import copy
 import json
 import logging
 import os
+import re
 import socket
 import uuid
 from typing import Any, Dict, List, Optional
@@ -32,7 +33,7 @@ if not os.path.exists(FAVICON_PATH):
     FAVICON_PATH = os.path.join(STATIC_DIR, "favicon.svg")
 os.makedirs(UPLOADS_DIR, exist_ok=True)
 
-APP_VERSION = "1.3.1"
+APP_VERSION = "1.3.2"
 
 # Helper to get local LAN IP address
 def get_local_ip() -> str:
@@ -44,6 +45,18 @@ def get_local_ip() -> str:
         return ip
     except Exception:
         return "127.0.0.1"
+
+# De-anonymize WebRTC ICE candidates & SDP (replace mDNS .local, 127.0.0.1, and 169.254 with real LAN IP)
+def rewrite_webrtc_ip(text: str, real_ip: str) -> str:
+    if not text or not real_ip:
+        return text
+    # 1. Replace any .local mDNS hostnames with real_ip
+    fixed = re.sub(r'[a-zA-Z0-9\-\._]+\.local', real_ip, text)
+    # 2. If real_ip is a LAN IP (not localhost), also replace 127.0.0.1 and 169.254 link-local
+    if real_ip not in ("127.0.0.1", "::1", "localhost"):
+        fixed = re.sub(r'\b127\.0\.0\.1\b', real_ip, fixed)
+        fixed = re.sub(r'\b169\.254\.\d{1,3}\.\d{1,3}\b', real_ip, fixed)
+    return fixed
 
 def ensure_ssl_certificates(local_ip: str) -> tuple[str, str]:
     cert_path = os.path.join(BASE_DIR, "cert.pem")
@@ -669,19 +682,41 @@ async def websocket_endpoint(websocket: WebSocket):
                     sender_id = msg.get("sender_id") or client_id
                     signal_type = msg.get("signal_type")
 
+                    # Determine sender IP on the LAN
+                    client_host = websocket.client.host if (websocket.client and websocket.client.host) else ""
+                    if client_host in ("127.0.0.1", "::1", "localhost", ""):
+                        sender_ip = get_local_ip()
+                    else:
+                        sender_ip = client_host
+
+                    # Rewrite candidates and SDP to eliminate unresolvable mDNS .local and 127.0.0.1/169.254 on LAN
+                    sdp_data = msg.get("sdp")
+                    if isinstance(sdp_data, dict):
+                        raw_sdp = sdp_data.get("sdp", "")
+                        if raw_sdp:
+                            sdp_data["sdp"] = rewrite_webrtc_ip(raw_sdp, sender_ip)
+
+                    cand_data = msg.get("candidate")
+                    if isinstance(cand_data, dict):
+                        raw_cand = cand_data.get("candidate", "")
+                        if raw_cand:
+                            cand_data["candidate"] = rewrite_webrtc_ip(raw_cand, sender_ip)
+
                     forward_msg = {
                         "event": "WEBRTC_SIGNAL",
                         "sender_id": sender_id,
+                        "sender_ip": sender_ip,
                         "target_screen": target_screen,
                         "signal_type": signal_type,
-                        "sdp": msg.get("sdp"),
-                        "candidate": msg.get("candidate"),
+                        "sdp": sdp_data,
+                        "candidate": cand_data,
                         "options": msg.get("options", {})
                     }
 
                     if signal_type == "offer":
-                        logger.info(f"--> [WEBRTC OFFER] From {sender_id} to display_{target_screen}")
-                        await manager.send_to_type(f"display_{target_screen}", forward_msg)
+                        logger.info(f"--> [WEBRTC OFFER] From {sender_id} ({sender_ip}) to display_{target_screen}")
+                        sent_count = await manager.send_to_type(f"display_{target_screen}", forward_msg)
+                        logger.info(f"--> [WEBRTC OFFER] Delivered to {sent_count} display_{target_screen} client(s)")
                         await manager.broadcast({
                             "event": "MIRROR_STATUS",
                             "screen": target_screen,
@@ -689,7 +724,10 @@ async def websocket_endpoint(websocket: WebSocket):
                             "sender_id": sender_id
                         })
                     elif target_id:
-                        await manager.send_to_id(target_id, forward_msg)
+                        sent = await manager.send_to_id(target_id, forward_msg)
+                        if not sent:
+                            logger.warning(f"--> [WEBRTC SIGNAL {signal_type}] target_id {target_id} not found, falling back to all spellbook clients")
+                            await manager.send_to_type("spellbook", forward_msg)
                     elif target_screen:
                         await manager.send_to_type(f"display_{target_screen}", forward_msg)
 
