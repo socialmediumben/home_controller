@@ -19,6 +19,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from hubspace import LightController
+import display_manager
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(name)s] %(levelname)s: %(message)s")
 logger = logging.getLogger("GrimoireServer")
@@ -34,7 +35,7 @@ if not os.path.exists(FAVICON_PATH):
     FAVICON_PATH = os.path.join(STATIC_DIR, "favicon.svg")
 os.makedirs(UPLOADS_DIR, exist_ok=True)
 
-APP_VERSION = "1.3.7"
+APP_VERSION = "1.3.8"
 
 # Helper to get local LAN IP address
 def get_local_ip() -> str:
@@ -193,6 +194,10 @@ def load_config() -> Dict[str, Any]:
         cfg.setdefault("hubspace", {})["selected_rooms"] = secrets["selected_rooms"]
     if "table_grid_size" in secrets:
         cfg["table_grid_size"] = secrets["table_grid_size"]
+    if "display_mapping" in secrets:
+        cfg["display_mapping"] = secrets["display_mapping"]
+    else:
+        cfg.setdefault("display_mapping", {"auto_launch": True, "frame": 1, "table": 2, "window": 3})
 
     return cfg
 
@@ -215,6 +220,8 @@ def save_config(cfg: Dict[str, Any]):
     secrets["selected_rooms"] = cfg.get("hubspace", {}).get("selected_rooms", [])
     if "table_grid_size" in cfg:
         secrets["table_grid_size"] = cfg["table_grid_size"]
+    if "display_mapping" in cfg:
+        secrets["display_mapping"] = cfg["display_mapping"]
 
     save_secrets(secrets)
 
@@ -348,6 +355,15 @@ async def startup_event():
     ssl_enabled = config.get("server", {}).get("ssl", True)
     proto = "https" if ssl_enabled else "http"
     logger.info(f"Grimoire Server v{APP_VERSION} ready! Tablet URL: {proto}://{get_local_ip()}:{port}/spellbook")
+
+    # Automatic Multi-Monitor Display Placement on Startup
+    if config.get("display_mapping", {}).get("auto_launch", True):
+        async def delayed_display_launch():
+            await asyncio.sleep(2.5)
+            base_url = f"{proto}://localhost:{port}"
+            logger.info(f"Auto-launching displays fullscreen at {base_url}...")
+            display_manager.launch_all_displays(config, base_url=base_url)
+        asyncio.create_task(delayed_display_launch())
 
 # Request Models
 class SceneSelectRequest(BaseModel):
@@ -710,6 +726,41 @@ async def upload_media(file: UploadFile = File(...)):
     file_url = f"/static/media/uploads/{clean_filename}"
     return {"status": "ok", "url": file_url, "filename": clean_filename}
 
+# Multi-Monitor Display Launch Endpoints
+@app.post("/api/launcher/open-displays")
+async def open_all_displays():
+    port = config.get("server", {}).get("port", 8088)
+    ssl_enabled = config.get("server", {}).get("ssl", True)
+    proto = "https" if ssl_enabled else "http"
+    base_url = f"{proto}://localhost:{port}"
+    logger.info(f"--> [LAUNCH DISPLAYS TRIGGERED] via API from base URL: {base_url}")
+    res = display_manager.launch_all_displays(config, base_url=base_url)
+    return res
+
+@app.get("/api/launcher/monitors")
+async def get_monitors():
+    monitors = display_manager.get_windows_monitors()
+    mapping = config.get("display_mapping", {"auto_launch": True, "frame": 1, "table": 2, "window": 3})
+    return {
+        "status": "ok",
+        "monitors": monitors,
+        "display_mapping": mapping
+    }
+
+@app.post("/api/launcher/display-mapping")
+async def save_display_mapping(payload: Dict[str, Any]):
+    current_mapping = config.setdefault("display_mapping", {})
+    if "auto_launch" in payload:
+        current_mapping["auto_launch"] = bool(payload["auto_launch"])
+    if "frame" in payload:
+        current_mapping["frame"] = int(payload["frame"])
+    if "table" in payload:
+        current_mapping["table"] = int(payload["table"])
+    if "window" in payload:
+        current_mapping["window"] = int(payload["window"])
+    save_config(config)
+    return {"status": "ok", "display_mapping": current_mapping}
+
 # WebSocket Endpoint with Explicit Handshake & Peer Status Broadcast
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
@@ -894,6 +945,14 @@ async def websocket_endpoint(websocket: WebSocket):
                             "screen": screen,
                             "active": False
                         })
+
+                elif action == "LAUNCH_DISPLAYS":
+                    port = config.get("server", {}).get("port", 8088)
+                    ssl_enabled = config.get("server", {}).get("ssl", True)
+                    proto = "https" if ssl_enabled else "http"
+                    base_url = f"{proto}://localhost:{port}"
+                    res = display_manager.launch_all_displays(config, base_url=base_url)
+                    await websocket.send_json({"event": "LAUNCH_DISPLAYS_ACK", "result": res})
 
                 elif action == "PING":
                     await websocket.send_json({"event": "PONG", "version": APP_VERSION})

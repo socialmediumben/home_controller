@@ -1,4 +1,4 @@
-# 📜 The Wizard's Grimoire: D&D Game Room & Display Controller (v1.3.7)
+# 📜 The Wizard's Grimoire: D&D Game Room & Display Controller (v1.3.8)
 
 A unified local controller for a Dungeons & Dragons game room decorated as a wizard's study. Controls **three independent thematic displays** and **smart lighting (Home Depot Hubspace & Google Home)** from a tablet disguised as a magical spellbook.
 
@@ -21,14 +21,16 @@ A unified local controller for a Dungeons & Dragons game room decorated as a wiz
 ┌────────────────────────────────────────────────────────┐
 │           Dell OptiPlex Mini PC (Local Hub)            │
 │   • FastAPI + WebSockets real-time server              │
+│   • Windows Multi-Monitor Auto-Launcher                │
 │   • Direct LAN low-latency screen/window streamer      │
-│   • Hubspace Cloud API / Simulator module              │
+│   • Hubspace Cloud API with auto-keepalive (60s)       │
 │   • Local media server & canvas weather engine         │
 └────────────┬──────────────┬──────────────┬─────────────┘
              │              │              │
              ▼              ▼              ▼
        [Window TV]    [Frame Monitor] [Table Projector]
          53" TV       Framed Portrait    Overhead Table
+      (Display 3)       (Display 1)       (Display 2)
       Gothic glass     Moving artwork    Battlemaps, live
      ambient weather    & NPC clues       window mirror, or
      or window cast   or handout cast       Roll20 embed
@@ -39,18 +41,17 @@ A unified local controller for a Dungeons & Dragons game room decorated as a wiz
 ## ⚡ Quick Start
 
 1. **Double-click `run.bat`** (or open a terminal and run `python server.py`).
-2. The server will start on clean dedicated port **8088** (with automatic self-signed HTTPS enabled) and open the **Display Launcher**:
-   * `https://localhost:8088/launcher`
-3. On the launcher page, click the buttons to open the 3 display windows and drag them to each monitor:
-   * **Window TV (53"):** `https://localhost:8088/display/window`
-   * **Picture Frame:** `https://localhost:8088/display/frame`
-   * **Table Projector:** `https://localhost:8088/display/table`
-   * *(Press `F` or double-click any display window to toggle borderless fullscreen!)*
-4. **Connect your Tablet or Laptop ("Spellbook"):**
+2. The server will start on clean dedicated port **8088** (with automatic self-signed HTTPS enabled):
+   * **Automatic Multi-Monitor Launch:** The server automatically launches all 3 displays directly onto their physical monitors in borderless fullscreen:
+     * **Display 1:** Picture Frame Monitor (`/display/frame`)
+     * **Display 2:** Overhead Table Projector (`/display/table`)
+     * **Display 3:** Window (53" TV) (`/display/window`)
+   * **Launcher Dashboard:** `https://localhost:8088/launcher` opens automatically, featuring an instant **"Auto-Launch All Displays Fullscreen"** button whenever you need to snap displays back.
+3. **Connect your Tablet or Laptop ("Spellbook"):**
    * Make sure your tablet/laptop is on the same home Wi-Fi network.
    * Open the URL shown in `run.bat` (e.g. `https://192.168.12.129:8088/spellbook`).
    * *(Note: On first load, your browser will display a standard "Connection is not private / Self-Signed" notice. Click **Advanced ➔ Proceed** once. This unlocks the Secure Context required for screen and window mirroring!)*
-   * Verify that the top header shows `v1.3.5 ● Synced`!
+   * Verify that the top header shows `v1.3.8 ● Synced`!
 
 ---
 

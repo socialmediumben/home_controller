@@ -1,9 +1,9 @@
 /**
- * Spellbook Tablet Controller JavaScript (v1.3.7)
+ * Spellbook Tablet Controller JavaScript (v1.3.8)
  * Features: Developer Mode, Arcane Preset Editor, Custom Media Uploader, Room & Scene Isolation, Arcane Screen Mirroring.
  */
 
-const CLIENT_VERSION = "1.3.7";
+const CLIENT_VERSION = "1.3.8";
 let currentTableGridSize = 22;
 console.log(`%c[Grimoire Spellbook] Loaded v${CLIENT_VERSION}`, "background: #312e81; color: #fbbf24; font-size: 14px; font-weight: bold; padding: 4px 8px; border-radius: 4px;");
 

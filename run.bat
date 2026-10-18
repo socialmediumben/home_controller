@@ -1,9 +1,9 @@
 @echo off
-title The Wizard's Grimoire - D&D Room Controller v1.3.0
+title The Wizard's Grimoire - D&D Room Controller v1.3.8
 color 06
 cls
 echo ===============================================================================
-echo            THE WIZARD'S GRIMOIRE - D^&D ROOM CONTROLLER [v1.3.0]
+echo            THE WIZARD'S GRIMOIRE - D^&D ROOM CONTROLLER [v1.3.8]
 echo ===============================================================================
 echo.
 echo  Detecting local Wi-Fi / LAN IP address for your tablet...
@@ -21,6 +21,11 @@ echo  ^> https://%LOCAL_IP%:8088/spellbook
 echo.
 echo  MINI PC MONITOR LAUNCHER:
 echo  ^> https://localhost:8088/launcher
+echo.
+echo  AUTO-LAUNCH FULLSCREEN DISPLAYS:
+echo  - Display 1: Picture Frame Monitor (/display/frame)
+echo  - Display 2: Overhead Table Projector (/display/table)
+echo  - Display 3: Window 53" TV (/display/window)
 echo  -----------------------------------------------------------------------------
 echo.
 echo  Press Ctrl+C to stop the server at any time.
@@ -41,4 +46,3 @@ if %ERRORLEVEL% equ 0 (
     )
 )
 pause
-
