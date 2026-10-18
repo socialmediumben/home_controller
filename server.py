@@ -34,7 +34,7 @@ if not os.path.exists(FAVICON_PATH):
     FAVICON_PATH = os.path.join(STATIC_DIR, "favicon.svg")
 os.makedirs(UPLOADS_DIR, exist_ok=True)
 
-APP_VERSION = "1.3.6"
+APP_VERSION = "1.3.7"
 
 # Helper to get local LAN IP address
 def get_local_ip() -> str:
@@ -449,46 +449,60 @@ async def get_state():
         "peers": manager.get_peer_status()
     }
 
+scene_lock = asyncio.Lock()
+
 @app.post("/api/scene")
 async def activate_scene(req: SceneSelectRequest):
-    presets = config.get("presets", [])
-    selected = next((p for p in presets if p["id"] == req.id), None)
-    if not selected:
-        raise HTTPException(status_code=404, detail="Scene preset not found")
+    async with scene_lock:
+        presets = config.get("presets", [])
+        selected = next((p for p in presets if p["id"] == req.id), None)
+        if not selected:
+            raise HTTPException(status_code=404, detail="Scene preset not found")
 
-    logger.info(f"--> [SCENE ACTIVATED] '{selected['name']}' (id: {selected['id']})")
+        logger.info(f"--> [SCENE ACTIVATED] '{selected['name']}' (id: {selected['id']})")
 
-    # Update state
-    config["current_state"]["scene_id"] = selected["id"]
-    config["current_state"]["scene_name"] = selected["name"]
-    
-    displays = copy.deepcopy(selected["displays"])
-    calibrated_grid_size = config.get("table_grid_size")
-    if calibrated_grid_size and "table" in displays:
-        displays["table"]["grid_size"] = calibrated_grid_size
+        # Update state
+        config["current_state"]["scene_id"] = selected["id"]
+        config["current_state"]["scene_name"] = selected["name"]
+        
+        displays = copy.deepcopy(selected["displays"])
+        calibrated_grid_size = config.get("table_grid_size")
+        if calibrated_grid_size and "table" in displays:
+            displays["table"]["grid_size"] = calibrated_grid_size
 
-    config["current_state"]["displays"] = displays
-    config["current_state"]["lighting"] = selected["lighting"]
-    save_config(config)
+        config["current_state"]["displays"] = displays
+        config["current_state"]["lighting"] = selected["lighting"]
+        save_config(config)
 
-    # Apply lighting
-    light_cfg = selected["lighting"]
-    await light_controller.apply_state(
-        power=light_cfg.get("power", True),
-        brightness=light_cfg.get("brightness", 70),
-        color=light_cfg.get("color", "#FF9E3B"),
-        effect=light_cfg.get("effect", "none")
-    )
+        # 1. Broadcast to all connected screens and tablets IMMEDIATELY
+        payload = {
+            "event": "SCENE_CHANGED",
+            "version": APP_VERSION,
+            "state": config["current_state"],
+            "scene": selected
+        }
+        await manager.broadcast(payload)
 
-    # Broadcast to all connected screens and tablets
-    payload = {
-        "event": "SCENE_CHANGED",
-        "version": APP_VERSION,
-        "state": config["current_state"],
-        "scene": selected
-    }
-    await manager.broadcast(payload)
-    return {"status": "ok", "scene": selected}
+        # 2. Dispatch lighting to physical smart bulbs / Hubspace
+        light_cfg = selected["lighting"]
+        try:
+            await light_controller.apply_state(
+                power=light_cfg.get("power", True),
+                brightness=light_cfg.get("brightness", 70),
+                color=light_cfg.get("color", "#FF9E3B"),
+                effect=light_cfg.get("effect", "none")
+            )
+        except Exception as e:
+            logger.error(f"Error applying lighting for scene {selected['id']}: {e}")
+
+        # 3. Broadcast verified lighting state
+        await manager.broadcast({
+            "event": "LIGHTING_UPDATED",
+            "version": APP_VERSION,
+            "lighting": light_controller.get_state()
+        })
+
+        return {"status": "ok", "scene": selected}
 
 @app.post("/api/preset")
 async def upsert_preset(req: PresetUpsertRequest):

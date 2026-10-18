@@ -1,9 +1,9 @@
 /**
- * Spellbook Tablet Controller JavaScript (v1.3.6)
+ * Spellbook Tablet Controller JavaScript (v1.3.7)
  * Features: Developer Mode, Arcane Preset Editor, Custom Media Uploader, Room & Scene Isolation, Arcane Screen Mirroring.
  */
 
-const CLIENT_VERSION = "1.3.6";
+const CLIENT_VERSION = "1.3.7";
 let currentTableGridSize = 22;
 console.log(`%c[Grimoire Spellbook] Loaded v${CLIENT_VERSION}`, "background: #312e81; color: #fbbf24; font-size: 14px; font-weight: bold; padding: 4px 8px; border-radius: 4px;");
 
@@ -653,7 +653,7 @@ function toggleAllDevices(power) {
   sendLightingUpdate({ power: power });
 }
 
-// User Actions (Sends BOTH via WebSocket AND HTTP)
+// User Actions (Clean WebSocket dispatch with HTTP fallback)
 function activateScene(sceneId, sceneName = '') {
   console.log(`%c[Grimoire Action] User tapped preset: '${sceneName || sceneId}' (id: ${sceneId})`, "background: #78350f; color: #fde68a; font-weight: bold; padding: 4px 8px; border-radius: 4px;");
   playChime(660, 'sine', 0.25);
@@ -668,13 +668,13 @@ function activateScene(sceneId, sceneName = '') {
       action: "SELECT_SCENE",
       id: sceneId
     }));
+  } else {
+    fetch('/api/scene', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: sceneId })
+    });
   }
-
-  fetch('/api/scene', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ id: sceneId })
-  });
 }
 
 function setWindowEffect(effectType, title) {
@@ -690,12 +690,13 @@ function setWindowEffect(effectType, title) {
 
   if (ws && ws.readyState === WebSocket.OPEN) {
     ws.send(JSON.stringify({ action: "SET_DISPLAY", screen: "window", display: data }));
+  } else {
+    fetch('/api/display/window', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
   }
-  fetch('/api/display/window', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data)
-  });
 }
 
 function setFramePortrait(src, title, caption) {
@@ -711,12 +712,13 @@ function setFramePortrait(src, title, caption) {
 
   if (ws && ws.readyState === WebSocket.OPEN) {
     ws.send(JSON.stringify({ action: "SET_DISPLAY", screen: "frame", display: data }));
+  } else {
+    fetch('/api/display/frame', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
   }
-  fetch('/api/display/frame', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data)
-  });
 }
 
 function setTableMap(src, title) {
@@ -732,12 +734,13 @@ function setTableMap(src, title) {
 
   if (ws && ws.readyState === WebSocket.OPEN) {
     ws.send(JSON.stringify({ action: "SET_DISPLAY", screen: "table", display: data }));
+  } else {
+    fetch('/api/display/table', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
   }
-  fetch('/api/display/table', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data)
-  });
 }
 
 // Lighting Controls
@@ -780,12 +783,13 @@ function sendLightingUpdate(update) {
   console.log(`[Grimoire Lighting] Sending update:`, update);
   if (ws && ws.readyState === WebSocket.OPEN) {
     ws.send(JSON.stringify({ action: "SET_LIGHTS", lighting: update }));
+  } else {
+    fetch('/api/lighting', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(update)
+    });
   }
-  fetch('/api/lighting', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(update)
-  });
 }
 
 // Checkboxes

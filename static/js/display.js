@@ -1,4 +1,4 @@
-const DISPLAY_CLIENT_VERSION = "1.3.6";
+const DISPLAY_CLIENT_VERSION = "1.3.7";
 
 // Determine screen type: query param takes precedence (?screen=window), then URL pathname
 const urlParams = new URLSearchParams(window.location.search);
