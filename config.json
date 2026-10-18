@@ -14,6 +14,7 @@
     "selected_devices": []
   },
   "selected_scenes": [],
+  "table_grid_size": 22,
   "home_assistant": {
     "enabled": false,
     "url": "http://homeassistant.local:8123",
@@ -52,7 +53,7 @@
         "type": "map",
         "src": "/static/media/tables/tavern.svg",
         "grid_enabled": false,
-        "grid_size": 60,
+        "grid_size": 22,
         "grid_color": "rgba(100, 255, 100, 0.3)",
         "roll20_url": ""
       }
@@ -93,7 +94,7 @@
           "type": "map",
           "src": "/static/media/tables/tavern.svg",
           "grid_enabled": true,
-          "grid_size": 60,
+          "grid_size": 22,
           "grid_color": "rgba(255, 215, 0, 0.35)",
           "roll20_url": ""
         }
@@ -133,7 +134,7 @@
           "type": "map",
           "src": "/static/media/tables/crypt.svg",
           "grid_enabled": true,
-          "grid_size": 60,
+          "grid_size": 22,
           "grid_color": "rgba(100, 200, 255, 0.4)",
           "roll20_url": ""
         }
@@ -173,7 +174,7 @@
           "type": "map",
           "src": "/static/media/tables/tavern.svg",
           "grid_enabled": true,
-          "grid_size": 60,
+          "grid_size": 22,
           "grid_color": "rgba(255, 230, 150, 0.4)",
           "roll20_url": ""
         }
@@ -213,7 +214,7 @@
           "type": "map",
           "src": "/static/media/tables/tavern.svg",
           "grid_enabled": false,
-          "grid_size": 60,
+          "grid_size": 22,
           "grid_color": "rgba(100, 255, 100, 0.3)",
           "roll20_url": ""
         }
@@ -253,7 +254,7 @@
           "type": "map",
           "src": "/static/media/tables/volcano.svg",
           "grid_enabled": true,
-          "grid_size": 60,
+          "grid_size": 22,
           "grid_color": "rgba(255, 60, 60, 0.6)",
           "roll20_url": ""
         }
@@ -293,7 +294,7 @@
           "type": "map",
           "src": "/static/media/tables/forest.svg",
           "grid_enabled": true,
-          "grid_size": 60,
+          "grid_size": 22,
           "grid_color": "rgba(220, 150, 255, 0.4)",
           "roll20_url": ""
         }
@@ -333,7 +334,7 @@
           "type": "map",
           "src": "/static/media/tables/fog.svg",
           "grid_enabled": false,
-          "grid_size": 60,
+          "grid_size": 22,
           "grid_color": "rgba(255, 255, 255, 0.2)",
           "roll20_url": ""
         }

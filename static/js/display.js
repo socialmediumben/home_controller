@@ -1,4 +1,4 @@
-const DISPLAY_CLIENT_VERSION = "1.3.4";
+const DISPLAY_CLIENT_VERSION = "1.3.5";
 
 // Determine screen type: query param takes precedence (?screen=window), then URL pathname
 const urlParams = new URLSearchParams(window.location.search);
@@ -380,7 +380,7 @@ function renderDisplay(displayData, immediate = false) {
   }, 1200);
 }
 
-function updateGrid(enabled, size = 60, color = 'rgba(255, 215, 0, 0.35)') {
+function updateGrid(enabled, size = 22, color = 'rgba(255, 215, 0, 0.35)') {
   if (!gridSvg) return;
   if (!enabled) {
     gridSvg.style.display = 'none';

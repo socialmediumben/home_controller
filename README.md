@@ -1,4 +1,4 @@
-# 📜 The Wizard's Grimoire: D&D Game Room & Display Controller (v1.3.4)
+# 📜 The Wizard's Grimoire: D&D Game Room & Display Controller (v1.3.5)
 
 A unified local controller for a Dungeons & Dragons game room decorated as a wizard's study. Controls **three independent thematic displays** and **smart lighting (Home Depot Hubspace & Google Home)** from a tablet disguised as a magical spellbook.
 
@@ -50,7 +50,7 @@ A unified local controller for a Dungeons & Dragons game room decorated as a wiz
    * Make sure your tablet/laptop is on the same home Wi-Fi network.
    * Open the URL shown in `run.bat` (e.g. `https://192.168.12.129:8088/spellbook`).
    * *(Note: On first load, your browser will display a standard "Connection is not private / Self-Signed" notice. Click **Advanced ➔ Proceed** once. This unlocks the Secure Context required for screen and window mirroring!)*
-   * Verify that the top header shows `v1.3.4 ● Synced`!
+   * Verify that the top header shows `v1.3.5 ● Synced`!
 
 ---
 

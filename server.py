@@ -33,7 +33,7 @@ if not os.path.exists(FAVICON_PATH):
     FAVICON_PATH = os.path.join(STATIC_DIR, "favicon.svg")
 os.makedirs(UPLOADS_DIR, exist_ok=True)
 
-APP_VERSION = "1.3.4"
+APP_VERSION = "1.3.5"
 
 # Helper to get local LAN IP address
 def get_local_ip() -> str:
@@ -158,6 +158,14 @@ def load_config() -> Dict[str, Any]:
         if secrets["home_assistant"].get("token"):
             cfg["home_assistant"]["token"] = secrets["home_assistant"]["token"]
 
+    # Restore user-selected devices, rooms, and grid calibration across updates
+    if "selected_devices" in secrets:
+        cfg.setdefault("hubspace", {})["selected_devices"] = secrets["selected_devices"]
+    if "selected_rooms" in secrets:
+        cfg.setdefault("hubspace", {})["selected_rooms"] = secrets["selected_rooms"]
+    if "table_grid_size" in secrets:
+        cfg["table_grid_size"] = secrets["table_grid_size"]
+
     return cfg
 
 def save_config(cfg: Dict[str, Any]):
@@ -173,6 +181,13 @@ def save_config(cfg: Dict[str, Any]):
         secrets.setdefault("hubspace", {})["username"] = hub_un
     if ha_tok:
         secrets.setdefault("home_assistant", {})["token"] = ha_tok
+
+    # Persist user selections into secrets.json so git pulls/updates never wipe them
+    secrets["selected_devices"] = cfg.get("hubspace", {}).get("selected_devices", [])
+    secrets["selected_rooms"] = cfg.get("hubspace", {}).get("selected_rooms", [])
+    if "table_grid_size" in cfg:
+        secrets["table_grid_size"] = cfg["table_grid_size"]
+
     save_secrets(secrets)
 
     # Clone cfg and redact secrets before writing config.json
@@ -386,6 +401,7 @@ async def get_state():
         "selected_rooms": config.get("hubspace", {}).get("selected_rooms") or [],
         "selected_devices": config.get("hubspace", {}).get("selected_devices") or [],
         "selected_scenes": selected_scenes,
+        "table_grid_size": config.get("table_grid_size", 22),
         "hubspace": {
             "enabled": config.get("hubspace", {}).get("enabled", False),
             "username": config.get("hubspace", {}).get("username", "")
@@ -417,7 +433,13 @@ async def activate_scene(req: SceneSelectRequest):
     # Update state
     config["current_state"]["scene_id"] = selected["id"]
     config["current_state"]["scene_name"] = selected["name"]
-    config["current_state"]["displays"] = selected["displays"]
+    
+    displays = copy.deepcopy(selected["displays"])
+    calibrated_grid_size = config.get("table_grid_size")
+    if calibrated_grid_size and "table" in displays:
+        displays["table"]["grid_size"] = calibrated_grid_size
+
+    config["current_state"]["displays"] = displays
     config["current_state"]["lighting"] = selected["lighting"]
     save_config(config)
 
@@ -481,18 +503,26 @@ async def update_display(screen: str, req: DisplayUpdateRequest):
     if screen not in ("window", "frame", "table"):
         raise HTTPException(status_code=400, detail="Invalid screen identifier.")
 
-    logger.info(f"--> [DISPLAY OVERRIDE] {screen}: {req.title or req.src}")
+    logger.info(f"--> [DISPLAY OVERRIDE] {screen}: {req.title or req.src or (f'grid_size={req.grid_size}' if req.grid_size else '')}")
     cur_display = config["current_state"]["displays"].get(screen, {})
     update_data = req.dict(exclude_unset=True)
     cur_display.update(update_data)
     config["current_state"]["displays"][screen] = cur_display
+
+    if screen == "table" and req.grid_size is not None:
+        config["table_grid_size"] = req.grid_size
+        for p in config.get("presets", []):
+            if "table" in p.get("displays", {}):
+                p["displays"]["table"]["grid_size"] = req.grid_size
+
     save_config(config)
 
     payload = {
         "event": "DISPLAY_UPDATED",
         "version": APP_VERSION,
         "screen": screen,
-        "display": cur_display
+        "display": cur_display,
+        "table_grid_size": config.get("table_grid_size", 22)
     }
     await manager.broadcast(payload)
     return {"status": "ok", "screen": screen, "display": cur_display}

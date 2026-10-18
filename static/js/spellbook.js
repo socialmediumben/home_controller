@@ -1,9 +1,10 @@
 /**
- * Spellbook Tablet Controller JavaScript (v1.3.4)
+ * Spellbook Tablet Controller JavaScript (v1.3.5)
  * Features: Developer Mode, Arcane Preset Editor, Custom Media Uploader, Room & Scene Isolation, Arcane Screen Mirroring.
  */
 
-const CLIENT_VERSION = "1.3.4";
+const CLIENT_VERSION = "1.3.5";
+let currentTableGridSize = 22;
 console.log(`%c[Grimoire Spellbook] Loaded v${CLIENT_VERSION}`, "background: #312e81; color: #fbbf24; font-size: 14px; font-weight: bold; padding: 4px 8px; border-radius: 4px;");
 
 let appState = null;
@@ -156,6 +157,13 @@ function fetchInitialState() {
       if (document.getElementById('hubspaceEnableCheck') && data.hubspace) {
         document.getElementById('hubspaceEnableCheck').checked = !!data.hubspace.enabled;
         document.getElementById('hubspaceUser').value = data.hubspace.username || '';
+      }
+      if (data.table_grid_size) {
+        currentTableGridSize = data.table_grid_size;
+        const label = document.getElementById('tableGridSizeVal');
+        const slider = document.getElementById('tableGridSizeSlider');
+        if (label) label.textContent = `${currentTableGridSize} px`;
+        if (slider) slider.value = currentTableGridSize;
       }
       renderScenes(presetsList);
       updateUI();
@@ -420,6 +428,13 @@ function updateUI() {
       if (tablePreviewPlaceholder) tablePreviewPlaceholder.style.display = 'none';
     }
     if (tableGridCheck) tableGridCheck.checked = displays.table.grid_enabled !== false;
+    if (displays.table.grid_size) {
+      currentTableGridSize = displays.table.grid_size;
+      const label = document.getElementById('tableGridSizeVal');
+      const slider = document.getElementById('tableGridSizeSlider');
+      if (label) label.textContent = `${currentTableGridSize} px`;
+      if (slider) slider.value = currentTableGridSize;
+    }
   }
 
   updateLightingUI();
@@ -801,6 +816,25 @@ if (tableGridCheck) {
   });
 }
 
+function onTableGridSizeChange(val) {
+  const size = parseInt(val, 10) || 22;
+  currentTableGridSize = size;
+  const label = document.getElementById('tableGridSizeVal');
+  if (label) label.textContent = `${size} px`;
+  const slider = document.getElementById('tableGridSizeSlider');
+  if (slider) slider.value = size;
+
+  fetch('/api/display/table', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ grid_size: size })
+  }).catch(() => {});
+}
+
+function resetGridTo1Inch() {
+  onTableGridSizeChange(22);
+}
+
 // Blackout
 if (blackoutBtn) {
   blackoutBtn.addEventListener('click', () => {
@@ -868,7 +902,7 @@ function renderSettingsFilterLists() {
         } else if (selectedRooms && selectedRooms.length > 0) {
           isChecked = availableRooms.some(r => selectedRooms.includes(r.id) && r.device_ids && r.device_ids.includes(dev.id));
         } else {
-          isChecked = true; // default all included if no filter set
+          isChecked = false; // default every light unchecked so user only adds the ones they want!
         }
 
         const label = document.createElement('label');
@@ -1087,7 +1121,7 @@ function openPresetEditorModal(presetId = null) {
     document.getElementById('presetTableCaption').value = t.caption || '';
     document.getElementById('presetTableSrc').value = t.src || '/static/media/tables/library.svg';
     document.getElementById('presetTableGrid').checked = t.grid_enabled !== false;
-    document.getElementById('presetTableGridSize').value = t.grid_size || 50;
+    document.getElementById('presetTableGridSize').value = t.grid_size || currentTableGridSize || 22;
 
   } else {
     // Defaults for new preset
@@ -1109,7 +1143,7 @@ function openPresetEditorModal(presetId = null) {
     document.getElementById('presetTableCaption').value = 'Deep catacombs map';
     document.getElementById('presetTableSrc').value = '/static/media/tables/crypt.svg';
     document.getElementById('presetTableGrid').checked = true;
-    document.getElementById('presetTableGridSize').value = 50;
+    document.getElementById('presetTableGridSize').value = currentTableGridSize || 22;
   }
 
   presetEditorModal.classList.add('open');
@@ -1162,7 +1196,7 @@ function savePresetForm() {
         type: "map",
         src: document.getElementById('presetTableSrc').value.trim(),
         grid_enabled: document.getElementById('presetTableGrid').checked,
-        grid_size: parseInt(document.getElementById('presetTableGridSize').value, 10) || 50,
+        grid_size: parseInt(document.getElementById('presetTableGridSize').value, 10) || currentTableGridSize || 22,
         caption: document.getElementById('presetTableCaption').value.trim()
       }
     }

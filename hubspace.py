@@ -321,8 +321,8 @@ class LightController:
                     allowed_ids.update(d.get("children", []))
             return [d for d in all_devices if d["id"] in allowed_ids]
 
-        # 3. Default: return all controllable devices
-        return all_devices
+        # 3. Default: empty list (do not control whole house until user explicitly checks game room fixtures)
+        return []
 
     async def set_individual_device(self, device_id: str, power: Optional[bool] = None, brightness: Optional[int] = None, color: Optional[str] = None):
         """Send command to a specific Hubspace device and immediately update local cache."""
