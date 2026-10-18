@@ -28,5 +28,17 @@ echo.
 
 start "" "http://localhost:8088/launcher"
 
-python server.py
+rem Try python first, then py launcher
+python -V >nul 2>&1
+if %ERRORLEVEL% equ 0 (
+    python server.py
+) else (
+    py -V >nul 2>&1
+    if %ERRORLEVEL% equ 0 (
+        py server.py
+    ) else (
+        python server.py
+    )
+)
 pause
+
