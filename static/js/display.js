@@ -1,4 +1,4 @@
-const DISPLAY_CLIENT_VERSION = "1.3.3";
+const DISPLAY_CLIENT_VERSION = "1.3.4";
 
 // Determine screen type: query param takes precedence (?screen=window), then URL pathname
 const urlParams = new URLSearchParams(window.location.search);
@@ -626,6 +626,8 @@ function resetMirrorWatchdog() {
   }, 12000);
 }
 
+let receivedFrameCount = 0;
+
 function handleBinaryMirrorFrame(arrayBuffer) {
   if (arrayBuffer.byteLength < 5) return;
   const header = new Uint8Array(arrayBuffer, 0, 4);
@@ -640,6 +642,11 @@ function handleBinaryMirrorFrame(arrayBuffer) {
   }
   resetMirrorWatchdog();
 
+  receivedFrameCount++;
+  if (receivedFrameCount === 1 || receivedFrameCount % 300 === 0) {
+    console.log(`%c[Grimoire Display: ${currentScreen}] Received mirror frame #${receivedFrameCount} (${arrayBuffer.byteLength} bytes)`, "color: #10b981; font-weight: bold;");
+  }
+
   const imageBlob = new Blob([new Uint8Array(arrayBuffer, 4)], { type: 'image/jpeg' });
   createImageBitmap(imageBlob).then(bitmap => {
     if (!isMirroring || !mirrorCanvas || !mirrorCtx) {
@@ -652,13 +659,16 @@ function handleBinaryMirrorFrame(arrayBuffer) {
     }
     mirrorCtx.drawImage(bitmap, 0, 0);
     bitmap.close();
-  }).catch(() => {});
+  }).catch(err => {
+    console.warn(`[Grimoire Display: ${currentScreen}] Error drawing mirror bitmap:`, err);
+  });
 }
 
 function stopMirroringDisplay() {
   if (!isMirroring && (!mirrorLayer || mirrorLayer.style.display === 'none')) return;
   console.log(`%c[Grimoire Display: ${currentScreen}] Stopping screen mirror...`, "color: #f97316; font-weight: bold;");
   isMirroring = false;
+  receivedFrameCount = 0;
   if (mirrorWatchdogTimer) {
     clearTimeout(mirrorWatchdogTimer);
     mirrorWatchdogTimer = null;

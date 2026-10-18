@@ -1,9 +1,9 @@
 /**
- * Spellbook Tablet Controller JavaScript (v1.3.3)
+ * Spellbook Tablet Controller JavaScript (v1.3.4)
  * Features: Developer Mode, Arcane Preset Editor, Custom Media Uploader, Room & Scene Isolation, Arcane Screen Mirroring.
  */
 
-const CLIENT_VERSION = "1.3.3";
+const CLIENT_VERSION = "1.3.4";
 console.log(`%c[Grimoire Spellbook] Loaded v${CLIENT_VERSION}`, "background: #312e81; color: #fbbf24; font-size: 14px; font-weight: bold; padding: 4px 8px; border-radius: 4px;");
 
 let appState = null;
@@ -1367,29 +1367,61 @@ async function startModalMirror() {
       }));
     }
 
-    // Set up offscreen video element to receive the stream frames
-    const video = document.createElement('video');
+    // Set up video element in DOM so Chromium actively decodes stream frames without culling
+    let video = document.getElementById('hiddenMirrorVideo');
+    if (!video) {
+      video = document.createElement('video');
+      video.id = 'hiddenMirrorVideo';
+      video.style.position = 'fixed';
+      video.style.top = '-9999px';
+      video.style.left = '-9999px';
+      video.style.width = '32px';
+      video.style.height = '32px';
+      video.style.opacity = '0.01';
+      video.style.pointerEvents = 'none';
+      video.style.zIndex = '-999';
+      document.body.appendChild(video);
+    }
     video.autoplay = true;
     video.playsInline = true;
     video.muted = true;
     video.srcObject = stream;
-    await video.play().catch(e => console.warn('[Grimoire Spellbook] Offscreen video play warning:', e));
+
+    // Wait until video metadata is loaded so dimensions are available
+    await new Promise((resolve) => {
+      if (video.videoWidth > 0) return resolve();
+      video.onloadedmetadata = () => resolve();
+      setTimeout(resolve, 800);
+    });
+    await video.play().catch(e => console.warn('[Grimoire Spellbook] Hidden video play:', e));
+
+    console.log(`[Grimoire Spellbook] Mirror stream source ready: ${video.videoWidth}x${video.videoHeight}`);
 
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
 
     let isStreaming = true;
     let isSending = false;
-    let animFrameId = null;
-    let lastFrameTime = 0;
-    const targetInterval = 1000 / 30; // Target ~30 FPS
+    let framesSent = 0;
 
-    const streamFrame = (now) => {
+    // Web Worker ticker: guarantees steady ~30 FPS even when the Spellbook tab is in the background
+    const workerScript = `
+      let timer = null;
+      self.onmessage = function(e) {
+        if (e.data === 'start') {
+          if (!timer) timer = setInterval(function() { self.postMessage('tick'); }, 33);
+        } else if (e.data === 'stop') {
+          if (timer) { clearInterval(timer); timer = null; }
+        }
+      };
+    `;
+    const workerBlob = new Blob([workerScript], { type: 'application/javascript' });
+    const workerUrl = URL.createObjectURL(workerBlob);
+    const tickerWorker = new Worker(workerUrl);
+
+    tickerWorker.onmessage = () => {
       if (!isStreaming) return;
-      animFrameId = requestAnimationFrame(streamFrame);
-
-      if (now - lastFrameTime < targetInterval) return;
-      if (isSending) return; // Drop frame if previous is still encoding/sending
+      if (isSending) return; // Drop frame if previous is still encoding/transmitting
       if (!ws || ws.readyState !== WebSocket.OPEN) return;
       if (ws.bufferedAmount > 128 * 1024) return; // Drop frame if network buffer is busy
 
@@ -1397,10 +1429,9 @@ async function startModalMirror() {
       const vh = video.videoHeight;
       if (!vw || !vh) return;
 
-      lastFrameTime = now;
       isSending = true;
 
-      // Scale to max 1920x1080 to maintain high detail while keeping throughput fast
+      // Scale to max 1920x1080 to maintain crisp text & high detail while ensuring ultra-fast throughput
       const maxW = 1920;
       const maxH = 1080;
       const scale = Math.min(1, maxW / vw, maxH / vh);
@@ -1435,6 +1466,10 @@ async function startModalMirror() {
 
           try {
             ws.send(packet.buffer);
+            framesSent++;
+            if (framesSent === 1 || framesSent % 150 === 0) {
+              console.log(`[Grimoire Spellbook] Mirror streaming active: sent ${framesSent} frames to ${screen} (${drawW}x${drawH})`);
+            }
           } catch (e) {
             console.warn('[Grimoire Spellbook] Mirror frame send error:', e);
           }
@@ -1443,13 +1478,16 @@ async function startModalMirror() {
       }, 'image/jpeg', 0.82);
     };
 
-    animFrameId = requestAnimationFrame(streamFrame);
+    tickerWorker.postMessage('start');
 
     const cleanup = () => {
       isStreaming = false;
-      if (animFrameId) {
-        cancelAnimationFrame(animFrameId);
-        animFrameId = null;
+      if (tickerWorker) {
+        try {
+          tickerWorker.postMessage('stop');
+          tickerWorker.terminate();
+          URL.revokeObjectURL(workerUrl);
+        } catch (e) {}
       }
       try {
         stream.getTracks().forEach(t => t.stop());
@@ -1457,6 +1495,7 @@ async function startModalMirror() {
       try {
         video.pause();
         video.srcObject = null;
+        if (video.parentNode) video.parentNode.removeChild(video);
       } catch (e) {}
     };
 

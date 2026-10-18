@@ -33,7 +33,7 @@ if not os.path.exists(FAVICON_PATH):
     FAVICON_PATH = os.path.join(STATIC_DIR, "favicon.svg")
 os.makedirs(UPLOADS_DIR, exist_ok=True)
 
-APP_VERSION = "1.3.3"
+APP_VERSION = "1.3.4"
 
 # Helper to get local LAN IP address
 def get_local_ip() -> str:
@@ -617,13 +617,21 @@ async def websocket_endpoint(websocket: WebSocket):
     try:
         while True:
             ws_msg = await websocket.receive()
+            if ws_msg.get("type") == "websocket.disconnect":
+                break
+
             if "bytes" in ws_msg and ws_msg["bytes"]:
                 raw_bytes = ws_msg["bytes"]
                 # Packet format: b"MIR" + 1 byte screen_code (0=window, 1=frame, 2=table) + payload
                 if len(raw_bytes) > 4 and raw_bytes[:3] == b"MIR":
                     screen_code = raw_bytes[3]
                     screen_name = "window" if screen_code == 0 else "frame" if screen_code == 1 else "table"
-                    await manager.send_bytes_to_type(f"display_{screen_name}", raw_bytes)
+                    forward_count = await manager.send_bytes_to_type(f"display_{screen_name}", raw_bytes)
+                    if not hasattr(manager, "_mirror_count"):
+                        manager._mirror_count = 0
+                    manager._mirror_count += 1
+                    if manager._mirror_count == 1 or manager._mirror_count % 300 == 0:
+                        logger.info(f"--> [MIRROR STREAM] Forwarded frame #{manager._mirror_count} ({len(raw_bytes)} bytes) to display_{screen_name} (destinations: {forward_count})")
                 continue
 
             if "text" not in ws_msg or not ws_msg["text"]:
