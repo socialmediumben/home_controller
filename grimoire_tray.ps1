@@ -22,8 +22,8 @@ function Write-TrayLog([string]$msg) {
 
 Write-TrayLog "Starting grimoire_tray.ps1 (OpenBrowser=$OpenBrowser)..."
 
-# Single-instance mutex check
-$MutexName = "Global\GrimoireTrayApp_Mutex"
+# Single-instance mutex check (Local session scope to avoid elevation requirements)
+$MutexName = "Local\GrimoireTrayApp_Mutex"
 $CreatedNew = $false
 try {
     $Mutex = New-Object System.Threading.Mutex($true, $MutexName, [ref]$CreatedNew)
@@ -35,6 +35,16 @@ try {
 if (-not $CreatedNew) {
     Write-TrayLog "Grimoire tray app is already running."
     if ($OpenBrowser) {
+        $socket = Get-NetTCPConnection -LocalPort 8088 -State Listen -ErrorAction SilentlyContinue
+        if (-not $socket) {
+            Write-TrayLog "Port 8088 not active. Reviving server process..."
+            Start-GrimoireServer
+        }
+        $waitCount = 6
+        while ($waitCount -gt 0 -and (-not (Get-NetTCPConnection -LocalPort 8088 -State Listen -ErrorAction SilentlyContinue))) {
+            Start-Sleep -Seconds 1
+            $waitCount--
+        }
         Start-Process "http://localhost:8088/launcher"
     }
     exit 0
@@ -48,10 +58,46 @@ try {
     exit 1
 }
 
-# Find Python executable
+# Robust Python executable detection
 function Get-PythonPath {
-    if (Get-Command py -ErrorAction SilentlyContinue) { return "py" }
-    if (Get-Command python -ErrorAction SilentlyContinue) { return "python" }
+    # 1. Try py launcher to resolve real python.exe
+    if (Get-Command py -ErrorAction SilentlyContinue) {
+        try {
+            $resolved = & py -c "import sys; print(sys.executable)" 2>$null
+            if ($resolved -and (Test-Path $resolved.Trim())) {
+                return $resolved.Trim()
+            }
+        } catch {}
+    }
+
+    # 2. Try python command in PATH (verify it's not the dummy WindowsApps alias)
+    $pyCmd = Get-Command python -ErrorAction SilentlyContinue
+    if ($pyCmd) {
+        $src = $pyCmd.Source
+        try {
+            $ver = & $src -c "import sys; print(sys.version)" 2>$null
+            if ($ver) { return $src }
+        } catch {}
+    }
+
+    # 3. Search common user and system installation directories
+    $searchPaths = @(
+        "$env:LOCALAPPDATA\Programs\Python\Python3*\python.exe",
+        "$env:ProgramFiles\Python3*\python.exe",
+        "${env:ProgramFiles(x86)}\Python3*\python.exe",
+        "C:\Python3*\python.exe",
+        "C:\Users\*\AppData\Local\Programs\Python\Python3*\python.exe"
+    )
+    foreach ($pattern in $searchPaths) {
+        $found = Get-Item $pattern -ErrorAction SilentlyContinue | Sort-Object FullName -Descending | Select-Object -First 1
+        if ($found -and (Test-Path $found.FullName)) {
+            try {
+                $ver = & $found.FullName -c "import sys; print(sys.version)" 2>$null
+                if ($ver) { return $found.FullName }
+            } catch {}
+        }
+    }
+
     return "python"
 }
 
@@ -65,19 +111,31 @@ function Start-GrimoireServer {
         }
 
         $pythonExe = Get-PythonPath
+        $serverLog = Join-Path $ScriptDir "server_log.txt"
         Write-TrayLog "Launching server using: $pythonExe server.py"
 
+        $cmdArgs = "/c `"`"$pythonExe`" server.py >> `"$serverLog`" 2>&1`""
         $psi = New-Object System.Diagnostics.ProcessStartInfo
-        $psi.FileName = $pythonExe
-        $psi.Arguments = "server.py"
+        $psi.FileName = "cmd.exe"
+        $psi.Arguments = $cmdArgs
         $psi.WorkingDirectory = $ScriptDir
         $psi.WindowStyle = [System.Diagnostics.ProcessWindowStyle]::Hidden
         $psi.CreateNoWindow = $true
         $psi.UseShellExecute = $false
 
         $proc = [System.Diagnostics.Process]::Start($psi)
-        Write-TrayLog "Server process spawned with PID: $($proc.Id)"
-        return $proc.Id
+        Write-TrayLog "Server wrapper process spawned (PID: $($proc.Id))"
+
+        # Give server time to bind port 8088
+        Start-Sleep -Milliseconds 1800
+        $activeSocket = Get-NetTCPConnection -LocalPort 8088 -State Listen -ErrorAction SilentlyContinue
+        if ($activeSocket) {
+            Write-TrayLog "Server verified active on port 8088 (PID: $($activeSocket.OwningProcess))"
+            return $activeSocket.OwningProcess
+        } else {
+            Write-TrayLog "Warning: Port 8088 is not yet listening. Check server_log.txt for potential errors."
+            return $proc.Id
+        }
     } catch {
         Write-TrayLog "Error starting server: $_"
         return $null
@@ -186,6 +244,11 @@ Write-TrayLog "System tray icon initialized."
 
 # Optional browser popup
 if ($OpenBrowser) {
+    $waitCount = 6
+    while ($waitCount -gt 0 -and (-not (Get-NetTCPConnection -LocalPort 8088 -State Listen -ErrorAction SilentlyContinue))) {
+        Start-Sleep -Seconds 1
+        $waitCount--
+    }
     Start-Process "http://localhost:8088/launcher"
 }
 
@@ -195,8 +258,9 @@ try {
 } catch {
     Write-TrayLog "Application.Run exception: $_"
 } finally {
-    $notifyIcon.Visible = $false
-    $notifyIcon.Dispose()
-    try { $Mutex.ReleaseMutex() } catch {}
+    if ($Mutex) {
+        try { $Mutex.ReleaseMutex() } catch {}
+        try { $Mutex.Dispose() } catch {}
+    }
     Write-TrayLog "Grimoire tray app terminated."
 }

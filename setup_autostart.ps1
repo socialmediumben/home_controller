@@ -4,7 +4,7 @@
 # ==============================================================================
 
 param(
-    [string]$TargetUser = "socia",
+    [string]$TargetUser = $env:USERNAME,
     [string]$AppDir = ""
 )
 
@@ -13,6 +13,11 @@ if (-not $AppDir) {
 }
 if (-not $AppDir) {
     $AppDir = "C:\Users\$TargetUser\Desktop\home_controller"
+}
+
+$psExe = "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe"
+if (-not (Test-Path $psExe)) {
+    $psExe = "powershell.exe"
 }
 
 Write-Host "=================================================================" -ForegroundColor Cyan
@@ -39,7 +44,7 @@ Write-Host "[+] Creating Desktop Shortcut: $ShortcutPath" -ForegroundColor Yello
 
 $WshShell = New-Object -ComObject WScript.Shell
 $Shortcut = $WshShell.CreateShortcut($ShortcutPath)
-$Shortcut.TargetPath = "powershell.exe"
+$Shortcut.TargetPath = $psExe
 $Shortcut.Arguments = "-ExecutionPolicy Bypass -NoProfile -WindowStyle Hidden -File `"$TrayScriptPath`" -OpenBrowser"
 $Shortcut.WorkingDirectory = $AppDir
 $Shortcut.Description = "Launch The Wizard's Grimoire D&D Room Controller"
@@ -92,7 +97,7 @@ $TaskXml = @"
   </Settings>
   <Actions Context="Author">
     <Exec>
-      <Command>powershell.exe</Command>
+      <Command>$psExe</Command>
       <Arguments>-ExecutionPolicy Bypass -NoProfile -WindowStyle Hidden -File "$TrayScriptPath"</Arguments>
       <WorkingDirectory>$AppDir</WorkingDirectory>
     </Exec>
