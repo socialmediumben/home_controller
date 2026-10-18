@@ -185,7 +185,7 @@ function initWebSocket() {
     }));
   };
 
-  ws.onmessage = (event) => {
+  ws.onmessage = async (event) => {
     try {
       const msg = JSON.parse(event.data);
 
@@ -292,11 +292,8 @@ function initWebSocket() {
             const isEndOfCandidates = !cand.candidate || cand.candidate.trim() === '';
             if (session.pc.remoteDescription && session.pc.remoteDescription.type) {
               try {
-                if (isEndOfCandidates) {
-                  await session.pc.addIceCandidate(null);
-                } else {
-                  await session.pc.addIceCandidate(new RTCIceCandidate(cand));
-                }
+                const candidateObj = isEndOfCandidates ? null : new RTCIceCandidate(cand);
+                session.pc.addIceCandidate(candidateObj).catch(e => console.warn('[Grimoire Spellbook] Candidate add error:', e));
               } catch(e) {}
             } else {
               session.pendingCandidates = session.pendingCandidates || [];
