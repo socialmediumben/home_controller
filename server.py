@@ -26,7 +26,9 @@ CONFIG_PATH = os.path.join(BASE_DIR, "config.json")
 SECRETS_PATH = os.path.join(BASE_DIR, "secrets.json")
 STATIC_DIR = os.path.join(BASE_DIR, "static")
 UPLOADS_DIR = os.path.join(STATIC_DIR, "media", "uploads")
-FAVICON_PATH = os.path.join(STATIC_DIR, "favicon.svg")
+FAVICON_PATH = os.path.join(STATIC_DIR, "grimoire.ico")
+if not os.path.exists(FAVICON_PATH):
+    FAVICON_PATH = os.path.join(STATIC_DIR, "favicon.svg")
 os.makedirs(UPLOADS_DIR, exist_ok=True)
 
 APP_VERSION = "1.2.5"
