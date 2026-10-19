@@ -165,6 +165,10 @@ function fetchInitialState() {
         if (label) label.textContent = `${currentTableGridSize} px`;
         if (slider) slider.value = currentTableGridSize;
       }
+      if (data.table_grid_shape) {
+        currentTableGridShape = data.table_grid_shape;
+        updateGridShapeUI(currentTableGridShape);
+      }
       renderScenes(presetsList);
       updateUI();
       if (data.peers) updatePeerBar(data.peers);
@@ -437,6 +441,10 @@ function updateUI() {
       const slider = document.getElementById('tableGridSizeSlider');
       if (label) label.textContent = `${currentTableGridSize} px`;
       if (slider) slider.value = currentTableGridSize;
+    }
+    if (displays.table.grid_shape) {
+      currentTableGridShape = displays.table.grid_shape;
+      updateGridShapeUI(currentTableGridShape);
     }
   }
 
@@ -842,6 +850,32 @@ function resetGridTo1Inch() {
   onTableGridSizeChange(22);
 }
 
+let currentTableGridShape = 'square';
+
+function setGridShape(shape) {
+  currentTableGridShape = shape;
+  updateGridShapeUI(shape);
+  fetch('/api/display/table', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ grid_shape: shape })
+  }).catch(() => {});
+}
+
+function updateGridShapeUI(shape) {
+  const btnSq = document.getElementById('btnGridSquare');
+  const btnHex = document.getElementById('btnGridHex');
+  if (btnSq && btnHex) {
+    if (shape === 'hex') {
+      btnHex.classList.add('active');
+      btnSq.classList.remove('active');
+    } else {
+      btnSq.classList.add('active');
+      btnHex.classList.remove('active');
+    }
+  }
+}
+
 // Blackout
 if (blackoutBtn) {
   blackoutBtn.addEventListener('click', () => {
@@ -1152,6 +1186,9 @@ function openPresetEditorModal(presetId = null) {
     document.getElementById('presetTableSrc').value = t.src || '/static/media/tables/library.svg';
     document.getElementById('presetTableGrid').checked = t.grid_enabled !== false;
     document.getElementById('presetTableGridSize').value = t.grid_size || currentTableGridSize || 22;
+    if (document.getElementById('presetTableGridShape')) {
+      document.getElementById('presetTableGridShape').value = t.grid_shape || currentTableGridShape || 'square';
+    }
 
   } else {
     // Defaults for new preset
@@ -1174,6 +1211,9 @@ function openPresetEditorModal(presetId = null) {
     document.getElementById('presetTableSrc').value = '/static/media/tables/library.svg';
     document.getElementById('presetTableGrid').checked = true;
     document.getElementById('presetTableGridSize').value = currentTableGridSize || 22;
+    if (document.getElementById('presetTableGridShape')) {
+      document.getElementById('presetTableGridShape').value = currentTableGridShape || 'square';
+    }
   }
 
   presetEditorModal.classList.add('open');
@@ -1233,6 +1273,7 @@ function savePresetForm() {
         type: "map",
         src: document.getElementById('presetTableSrc').value.trim(),
         grid_enabled: document.getElementById('presetTableGrid').checked,
+        grid_shape: document.getElementById('presetTableGridShape') ? document.getElementById('presetTableGridShape').value : 'square',
         grid_size: parseInt(document.getElementById('presetTableGridSize').value, 10) || currentTableGridSize || 22,
         caption: document.getElementById('presetTableCaption').value.trim()
       }

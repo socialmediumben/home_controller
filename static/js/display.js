@@ -330,7 +330,7 @@ function renderDisplay(displayData, immediate = false) {
 
   // Table Overlays
   if (currentScreen === 'table') {
-    updateGrid(displayData.grid_enabled, displayData.grid_size, displayData.grid_color);
+    updateGrid(displayData.grid_enabled, displayData.grid_size, displayData.grid_color, displayData.grid_shape || 'square');
   }
 
   // Generate Media HTML
@@ -380,17 +380,39 @@ function renderDisplay(displayData, immediate = false) {
   }, 1200);
 }
 
-function updateGrid(enabled, size = 22, color = 'rgba(255, 215, 0, 0.35)') {
+function updateGrid(enabled, size = 22, color = 'rgba(255, 215, 0, 0.35)', shape = 'square') {
   if (!gridSvg) return;
   if (!enabled) {
     gridSvg.style.display = 'none';
     return;
   }
   gridSvg.style.display = 'block';
-  if (gridPattern) {
+  if (!gridPattern) return;
+
+  const path = gridPattern.querySelector('path');
+  if (shape === 'hex') {
+    // Seamless regular hexagon grid: width = size (same dimension as square grid)
+    const S = parseFloat(size) || 22;
+    const R = S / Math.sqrt(3);
+    const W = S;
+    const H = 3 * R;
+    const r05 = (R * 0.5).toFixed(2);
+    const r15 = (R * 1.5).toFixed(2);
+    const r20 = (R * 2.0).toFixed(2);
+    const w05 = (W * 0.5).toFixed(2);
+    const wStr = W.toFixed(2);
+    const hStr = H.toFixed(2);
+
+    gridPattern.setAttribute('width', wStr);
+    gridPattern.setAttribute('height', hStr);
+    if (path) {
+      path.setAttribute('d', `M 0 ${r05} L ${w05} 0 L ${wStr} ${r05} M 0 ${r05} L 0 ${r15} M 0 ${r15} L ${w05} ${r20} L ${wStr} ${r15} M ${w05} ${r20} L ${w05} ${hStr}`);
+      path.setAttribute('stroke', color);
+    }
+  } else {
+    // Standard square grid
     gridPattern.setAttribute('width', size);
     gridPattern.setAttribute('height', size);
-    const path = gridPattern.querySelector('path');
     if (path) {
       path.setAttribute('d', `M ${size} 0 L 0 0 0 ${size}`);
       path.setAttribute('stroke', color);
@@ -795,21 +817,40 @@ setInterval(() => {
   }
 }, 15000);
 
-// Fullscreen Controls
+// Fullscreen Controls (Toggled via F or double-click; Exited via Esc or F)
 if (fsBtn) {
   fsBtn.addEventListener('click', toggleFullscreen);
 }
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'f' || e.key === 'F') toggleFullscreen();
+document.addEventListener('keydown', async (e) => {
+  if (e.key === 'f' || e.key === 'F') {
+    e.preventDefault();
+    toggleFullscreen();
+  } else if (e.key === 'Escape' || e.key === 'Esc') {
+    e.preventDefault();
+    exitFullscreen();
+  }
 });
 document.addEventListener('dblclick', toggleFullscreen);
 
-function toggleFullscreen() {
-  if (!document.fullscreenElement) {
-    document.documentElement.requestFullscreen().catch(() => {});
+async function toggleFullscreen() {
+  if (document.fullscreenElement) {
+    await exitFullscreen();
   } else {
-    if (document.exitFullscreen) document.exitFullscreen().catch(() => {});
+    try {
+      await document.documentElement.requestFullscreen();
+    } catch (err) {
+      fetch(`/api/launcher/window-toggle?screen=${currentScreen}`, { method: 'POST' }).catch(() => {});
+    }
   }
+}
+
+async function exitFullscreen() {
+  if (document.fullscreenElement) {
+    try {
+      await document.exitFullscreen();
+    } catch (err) {}
+  }
+  fetch(`/api/launcher/window-restore?screen=${currentScreen}`, { method: 'POST' }).catch(() => {});
 }
 
 // Start immediately

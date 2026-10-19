@@ -236,7 +236,6 @@ def launch_all_displays(config: Dict[str, Any], base_url: str = "https://localho
             f"--app={url}",
             f"--window-position={matched_mon['x']},{matched_mon['y']}",
             f"--window-size={matched_mon['width']},{matched_mon['height']}",
-            "--kiosk",
             "--start-fullscreen",
             f"--user-data-dir={profile_dir}",
             "--test-type",
@@ -302,3 +301,27 @@ def launch_all_displays(config: Dict[str, Any], base_url: str = "https://localho
         "monitors_detected": len(monitors),
         "displays": results
     }
+
+def restore_window(screen_name: str):
+    """Restores a display window from fullscreen to normal windowed mode."""
+    title_sub = f"- {screen_name.upper()}"
+    hwnds = find_windows_by_title_substring(title_sub)
+    for hwnd in hwnds:
+        try:
+            ctypes.windll.user32.ShowWindow(hwnd, SW_RESTORE)
+            logger.info(f"Restored window hwnd={hwnd} ({screen_name})")
+        except Exception as e:
+            logger.warning(f"Error restoring window: {e}")
+
+def toggle_window(screen_name: str):
+    """Toggles window between restored and maximized/fullscreen mode."""
+    title_sub = f"- {screen_name.upper()}"
+    hwnds = find_windows_by_title_substring(title_sub)
+    for hwnd in hwnds:
+        try:
+            if ctypes.windll.user32.IsZoomed(hwnd):
+                ctypes.windll.user32.ShowWindow(hwnd, SW_RESTORE)
+            else:
+                ctypes.windll.user32.ShowWindow(hwnd, SW_MAXIMIZE)
+        except Exception as e:
+            logger.warning(f"Error toggling window: {e}")

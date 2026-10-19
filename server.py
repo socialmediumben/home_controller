@@ -194,6 +194,10 @@ def load_config() -> Dict[str, Any]:
         cfg.setdefault("hubspace", {})["selected_rooms"] = secrets["selected_rooms"]
     if "table_grid_size" in secrets:
         cfg["table_grid_size"] = secrets["table_grid_size"]
+    if "table_grid_shape" in secrets:
+        cfg["table_grid_shape"] = secrets["table_grid_shape"]
+    else:
+        cfg.setdefault("table_grid_shape", "square")
     if "display_mapping" in secrets:
         cfg["display_mapping"] = secrets["display_mapping"]
     else:
@@ -220,6 +224,8 @@ def save_config(cfg: Dict[str, Any]):
     secrets["selected_rooms"] = cfg.get("hubspace", {}).get("selected_rooms", [])
     if "table_grid_size" in cfg:
         secrets["table_grid_size"] = cfg["table_grid_size"]
+    if "table_grid_shape" in cfg:
+        secrets["table_grid_shape"] = cfg["table_grid_shape"]
     if "display_mapping" in cfg:
         secrets["display_mapping"] = cfg["display_mapping"]
 
@@ -380,6 +386,7 @@ class DisplayUpdateRequest(BaseModel):
     show_ornate_border: Optional[bool] = None
     grid_enabled: Optional[bool] = None
     grid_size: Optional[int] = None
+    grid_shape: Optional[str] = None
     grid_color: Optional[str] = None
     roll20_url: Optional[str] = None
 
@@ -446,6 +453,7 @@ async def get_state():
         "selected_devices": config.get("hubspace", {}).get("selected_devices") or [],
         "selected_scenes": selected_scenes,
         "table_grid_size": config.get("table_grid_size", 22),
+        "table_grid_shape": config.get("table_grid_shape", "square"),
         "hubspace": {
             "enabled": config.get("hubspace", {}).get("enabled", False),
             "username": config.get("hubspace", {}).get("username", "")
@@ -483,8 +491,11 @@ async def activate_scene(req: SceneSelectRequest):
         
         displays = copy.deepcopy(selected["displays"])
         calibrated_grid_size = config.get("table_grid_size")
-        if calibrated_grid_size and "table" in displays:
-            displays["table"]["grid_size"] = calibrated_grid_size
+        calibrated_grid_shape = config.get("table_grid_shape", "square")
+        if "table" in displays:
+            if calibrated_grid_size:
+                displays["table"]["grid_size"] = calibrated_grid_size
+            displays["table"]["grid_shape"] = calibrated_grid_shape
 
         config["current_state"]["displays"] = displays
         config["current_state"]["lighting"] = selected["lighting"]
@@ -603,6 +614,12 @@ async def update_display(screen: str, req: DisplayUpdateRequest):
             if "table" in p.get("displays", {}):
                 p["displays"]["table"]["grid_size"] = req.grid_size
 
+    if screen == "table" and req.grid_shape is not None:
+        config["table_grid_shape"] = req.grid_shape
+        for p in config.get("presets", []):
+            if "table" in p.get("displays", {}):
+                p["displays"]["table"]["grid_shape"] = req.grid_shape
+
     save_config(config)
 
     payload = {
@@ -610,7 +627,8 @@ async def update_display(screen: str, req: DisplayUpdateRequest):
         "version": APP_VERSION,
         "screen": screen,
         "display": cur_display,
-        "table_grid_size": config.get("table_grid_size", 22)
+        "table_grid_size": config.get("table_grid_size", 22),
+        "table_grid_shape": config.get("table_grid_shape", "square")
     }
     await manager.broadcast(payload)
     return {"status": "ok", "screen": screen, "display": cur_display}
@@ -760,6 +778,16 @@ async def save_display_mapping(payload: Dict[str, Any]):
         current_mapping["window"] = int(payload["window"])
     save_config(config)
     return {"status": "ok", "display_mapping": current_mapping}
+
+@app.post("/api/launcher/window-restore")
+async def restore_display_window(screen: str = "window"):
+    display_manager.restore_window(screen)
+    return {"status": "ok", "screen": screen}
+
+@app.post("/api/launcher/window-toggle")
+async def toggle_display_window(screen: str = "window"):
+    display_manager.toggle_window(screen)
+    return {"status": "ok", "screen": screen}
 
 # WebSocket Endpoint with Explicit Handshake & Peer Status Broadcast
 @app.websocket("/ws")

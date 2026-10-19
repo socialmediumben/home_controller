@@ -39,6 +39,25 @@
     .peer-item strong.offline {
       color: #71717a;
     }
+
+    .grid-shape-btn {
+      background: rgba(20, 14, 8, 0.85);
+      border: none;
+      color: #b8a68b;
+      padding: 3px 8px;
+      cursor: pointer;
+      font-size: 11px;
+      font-family: 'Cinzel', serif;
+      transition: all 0.2s ease;
+    }
+    .grid-shape-btn:hover {
+      color: #fff;
+    }
+    .grid-shape-btn.active {
+      background: var(--gold-accent);
+      color: #120902;
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
@@ -201,9 +220,15 @@
         <div class="screen-box">
           <div class="screen-box-title">
             <span>🗺️ Tabletop Projector</span>
-            <label style="font-size: 11px; cursor: pointer;">
-              <input type="checkbox" id="tableGridCheck" checked> Tactical Grid
-            </label>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <label style="font-size: 11px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                <input type="checkbox" id="tableGridCheck" checked> Grid
+              </label>
+              <div class="grid-shape-group" style="display: inline-flex; border: 1px solid var(--gold-accent); border-radius: 4px; overflow: hidden;">
+                <button type="button" id="btnGridSquare" class="grid-shape-btn active" onclick="setGridShape('square')" title="Square Grid">⏹️ Square</button>
+                <button type="button" id="btnGridHex" class="grid-shape-btn" onclick="setGridShape('hex')" title="Hexagon Grid">⬡ Hex</button>
+              </div>
+            </div>
           </div>
 
           <!-- Dev-Only Table Grid Size Adjuster (1-Inch Calibration) -->
@@ -582,12 +607,19 @@
             <label>Map Image Source (Path or Uploaded URL):</label>
             <input type="text" id="presetTableSrc" placeholder="/static/media/tables/library.svg">
           </div>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: center;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; align-items: center;">
             <label style="cursor: pointer; display: flex; align-items: center; gap: 6px;">
-              <input type="checkbox" id="presetTableGrid" checked> 1-Inch Tactical Grid
+              <input type="checkbox" id="presetTableGrid" checked> Tactical Grid
             </label>
             <div class="form-group" style="margin: 0;">
-              <label>Grid Size (px):</label>
+              <label>Pattern:</label>
+              <select id="presetTableGridShape" class="grimoire-select" style="padding: 4px 6px; font-size: 11px;">
+                <option value="square">⏹️ Square</option>
+                <option value="hex">⬡ Hexagon</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin: 0;">
+              <label>Size (px):</label>
               <input type="number" id="presetTableGridSize" value="22" min="10" max="150">
             </div>
           </div>
