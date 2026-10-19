@@ -28,12 +28,12 @@ A unified local controller for a Dungeons & Dragons game room decorated as a wiz
 └────────────┬──────────────┬──────────────┬─────────────┘
              │              │              │
              ▼              ▼              ▼
-       [Window TV]    [Frame Monitor] [Table Projector]
-         53" TV       Framed Portrait    Overhead Table
-      (Display 3)       (Display 1)       (Display 2)
-      Gothic glass     Moving artwork    Battlemaps, live
-     ambient weather    & NPC clues       window mirror, or
-     or window cast   or handout cast       Roll20 embed
+       [Frame Monitor]   [Window TV]    [Table Projector]
+       Framed Portrait      53" TV       Overhead Table
+         (Display 1)     (Display 2)       (Display 3)
+        Moving artwork   Gothic glass    Battlemaps, live
+         & NPC clues    ambient weather  window mirror, or
+       or handout cast  or window cast     Roll20 embed
 ```
 
 ---
@@ -44,8 +44,8 @@ A unified local controller for a Dungeons & Dragons game room decorated as a wiz
 2. The server will start on clean dedicated port **8088** (with automatic self-signed HTTPS enabled):
    * **Automatic Multi-Monitor Launch:** The server automatically launches all 3 displays directly onto their physical monitors in borderless fullscreen:
      * **Display 1:** Picture Frame Monitor (`/display/frame`)
-     * **Display 2:** Overhead Table Projector (`/display/table`)
-     * **Display 3:** Window (53" TV) (`/display/window`)
+     * **Display 2:** Window (53" TV) (`/display/window`)
+     * **Display 3:** Overhead Table Projector (`/display/table`)
    * **Launcher Dashboard:** `https://localhost:8088/launcher` opens automatically, featuring an instant **"Auto-Launch All Displays Fullscreen"** button whenever you need to snap displays back.
 3. **Connect your Tablet or Laptop ("Spellbook"):**
    * Make sure your tablet/laptop is on the same home Wi-Fi network.

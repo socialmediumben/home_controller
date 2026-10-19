@@ -18,8 +18,8 @@
   "display_mapping": {
     "auto_launch": true,
     "frame": 1,
-    "table": 2,
-    "window": 3
+    "window": 2,
+    "table": 3
   },
   "home_assistant": {
     "enabled": false,

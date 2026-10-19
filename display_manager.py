@@ -3,8 +3,8 @@ Display Manager for The Wizard's Grimoire (v1.3.8)
 Handles multi-monitor enumeration on Windows, browser launching, and automatic fullscreen positioning.
 Default Mapping:
   - Display 1: Picture Frame Monitor (/display/frame)
-  - Display 2: Overhead Table Projector (/display/table)
-  - Display 3: Window Display (/display/window)
+  - Display 2: Window Display (/display/window)
+  - Display 3: Overhead Table Projector (/display/table)
 """
 
 import asyncio
@@ -41,7 +41,10 @@ class MONITORINFOEX(ctypes.Structure):
 SWP_NOZORDER = 0x0004
 SWP_SHOWWINDOW = 0x0040
 SW_MAXIMIZE = 3
+SW_MINIMIZE = 6
 SW_RESTORE = 9
+WM_CLOSE = 0x0010
+HWND_TOP = 0
 
 def get_windows_monitors() -> List[Dict[str, Any]]:
     """Enumerate all connected physical and virtual monitors in Windows."""
@@ -121,15 +124,16 @@ def find_windows_by_title_substring(title_sub: str) -> List[int]:
     return hwnds
 
 def position_window_on_monitor(hwnd: int, monitor: Dict[str, Any]):
-    """Force moves a window onto a monitor's coordinates and sets it fullscreen."""
+    """Force moves a window onto a monitor's coordinates, sets fullscreen, and brings to top."""
     try:
         x, y = monitor["x"], monitor["y"]
         w, h = monitor["width"], monitor["height"]
         # Restore first in case it was maximized on another monitor
         ctypes.windll.user32.ShowWindow(hwnd, SW_RESTORE)
-        ctypes.windll.user32.SetWindowPos(hwnd, 0, x, y, w, h, SWP_NOZORDER | SWP_SHOWWINDOW)
-        # Maximize on target monitor
+        ctypes.windll.user32.SetWindowPos(hwnd, HWND_TOP, x, y, w, h, SWP_SHOWWINDOW)
         ctypes.windll.user32.ShowWindow(hwnd, SW_MAXIMIZE)
+        ctypes.windll.user32.BringWindowToTop(hwnd)
+        ctypes.windll.user32.SetForegroundWindow(hwnd)
         logger.info(f"Positioned window hwnd={hwnd} to {monitor['device']} ({x},{y} {w}x{h})")
     except Exception as e:
         logger.warning(f"Failed positioning window hwnd={hwnd}: {e}")
@@ -137,14 +141,54 @@ def position_window_on_monitor(hwnd: int, monitor: Dict[str, Any]):
 # Process tracking
 _launched_display_processes: List[subprocess.Popen] = []
 
+def close_all_displays() -> int:
+    """Terminate any launched display kiosk processes and close existing display windows."""
+    global _launched_display_processes
+    count = 0
+    pids_to_kill = set()
+
+    # 1. Inspect any visible display windows and collect their owning process IDs
+    hwnds = find_windows_by_title_substring("Display [v")
+    for hwnd in hwnds:
+        pid = wintypes.DWORD()
+        ctypes.windll.user32.GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
+        if pid.value:
+            pids_to_kill.add(pid.value)
+        try:
+            ctypes.windll.user32.PostMessageW(hwnd, WM_CLOSE, 0, 0)
+            count += 1
+        except Exception:
+            pass
+
+    # 2. Add tracked subprocess PIDs
+    while _launched_display_processes:
+        proc = _launched_display_processes.pop()
+        if proc.pid:
+            pids_to_kill.add(proc.pid)
+
+    # 3. Kill process trees with taskkill
+    for pid in pids_to_kill:
+        try:
+            subprocess.run(["taskkill", "/F", "/T", "/PID", str(pid)], capture_output=True)
+            count += 1
+        except Exception:
+            pass
+
+    return count
+
 def launch_all_displays(config: Dict[str, Any], base_url: str = "https://localhost:8088") -> Dict[str, Any]:
     """
-    Launches Chrome/Edge for the 3 Grimoire displays positioned onto their assigned monitors.
+    Cleanly terminates any previous display instances and launches Chrome/Edge
+    for the 3 Grimoire displays positioned onto their assigned monitors.
     Mapping defaults:
       - Display 1: Picture Frame (/display/frame)
-      - Display 2: Overhead Table Projector (/display/table)
-      - Display 3: Window Display (/display/window)
+      - Display 2: Window Display (/display/window)
+      - Display 3: Overhead Table Projector (/display/table)
     """
+    # Clean up previous instances so Chromium profiles unlock and windows don't duplicate
+    close_all_displays()
+    time.sleep(0.6)
+
     browser_exe = get_browser_executable()
     if not browser_exe:
         logger.error("No compatible Chromium browser (Chrome or Edge) found on system!")
@@ -155,8 +199,8 @@ def launch_all_displays(config: Dict[str, Any], base_url: str = "https://localho
 
     display_mapping = config.get("display_mapping", {
         "frame": 1,
-        "table": 2,
-        "window": 3
+        "window": 2,
+        "table": 3
     })
 
     # Base profile directory to keep displays independent from regular browsing
@@ -166,8 +210,8 @@ def launch_all_displays(config: Dict[str, Any], base_url: str = "https://localho
     results = {}
     screen_targets = [
         ("frame", "Picture Frame Monitor", display_mapping.get("frame", 1)),
-        ("table", "Overhead Table Projector", display_mapping.get("table", 2)),
-        ("window", "53\" Window TV", display_mapping.get("window", 3))
+        ("window", "53\" Window TV", display_mapping.get("window", 2)),
+        ("table", "Overhead Table Projector", display_mapping.get("table", 3))
     ]
 
     for screen_name, friendly_title, target_display_num in screen_targets:
@@ -185,13 +229,17 @@ def launch_all_displays(config: Dict[str, Any], base_url: str = "https://localho
         profile_dir = os.path.join(base_profile_dir, f"profile_{screen_name}")
         url = f"{base_url.rstrip('/')}/display/{screen_name}"
 
+        # Clean, banner-free kiosk arguments:
+        # --test-type suppresses the "You are using an unsupported command-line flag: --ignore-certificate-errors" banner!
         cmd = [
             browser_exe,
             f"--app={url}",
             f"--window-position={matched_mon['x']},{matched_mon['y']}",
             f"--window-size={matched_mon['width']},{matched_mon['height']}",
+            "--kiosk",
             "--start-fullscreen",
             f"--user-data-dir={profile_dir}",
+            "--test-type",
             "--no-first-run",
             "--no-default-browser-check",
             "--ignore-certificate-errors",
@@ -199,10 +247,15 @@ def launch_all_displays(config: Dict[str, Any], base_url: str = "https://localho
             "--autoplay-policy=no-user-gesture-required",
             "--disable-features=Translate",
             "--disable-pinch",
-            "--overscroll-history-navigation=0"
+            "--overscroll-history-navigation=0",
+            "--disable-infobars",
+            "--disable-notifications",
+            "--disable-popup-blocking",
+            "--disable-session-crashed-bubble",
+            "--hide-scrollbars"
         ]
 
-        logger.info(f"Launching {friendly_title} on {matched_mon['device']} ({matched_mon['x']},{matched_mon['y']})...")
+        logger.info(f"Launching {friendly_title} on {matched_mon['device']} (Display {target_display_num})...")
         try:
             proc = subprocess.Popen(cmd)
             _launched_display_processes.append(proc)
@@ -216,9 +269,10 @@ def launch_all_displays(config: Dict[str, Any], base_url: str = "https://localho
             logger.error(f"Failed to launch {screen_name}: {e}")
             results[screen_name] = {"status": "error", "error": str(e)}
 
-    # Schedule background verification to ensure Win32 coordinates are locked
+    # Schedule background verification to ensure Win32 coordinates are locked & in front
     def verify_and_nudge_windows():
         time.sleep(2.0)
+        display_hwnds = set()
         for screen_name, _, target_display_num in screen_targets:
             matched_mon = next((m for m in monitors if m["index"] == target_display_num), None)
             if not matched_mon and monitors:
@@ -226,11 +280,18 @@ def launch_all_displays(config: Dict[str, Any], base_url: str = "https://localho
             if not matched_mon:
                 continue
 
-            # Look for window title: Display [...] - SCREEN_NAME
             title_sub = f"- {screen_name.upper()}"
             hwnds = find_windows_by_title_substring(title_sub)
             for hwnd in hwnds:
+                display_hwnds.add(hwnd)
                 position_window_on_monitor(hwnd, matched_mon)
+
+        # Minimize any launcher browser window so it never obscures the displays
+        time.sleep(0.5)
+        launcher_hwnds = find_windows_by_title_substring("Launcher")
+        for l_hwnd in launcher_hwnds:
+            if l_hwnd not in display_hwnds:
+                ctypes.windll.user32.ShowWindow(l_hwnd, SW_MINIMIZE)
 
     import threading
     t = threading.Thread(target=verify_and_nudge_windows, daemon=True)
@@ -241,15 +302,3 @@ def launch_all_displays(config: Dict[str, Any], base_url: str = "https://localho
         "monitors_detected": len(monitors),
         "displays": results
     }
-
-def close_all_displays():
-    """Terminate any launched display kiosk processes."""
-    count = 0
-    while _launched_display_processes:
-        proc = _launched_display_processes.pop()
-        try:
-            proc.terminate()
-            count += 1
-        except Exception:
-            pass
-    return count

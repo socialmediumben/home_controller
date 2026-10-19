@@ -19,19 +19,17 @@ echo  --------------------------------------------------------------------------
 echo  TABLET CONNECTION URL (Open on your iPad / Tablet / Laptop):
 echo  ^> https://%LOCAL_IP%:8088/spellbook
 echo.
-echo  MINI PC MONITOR LAUNCHER:
-echo  ^> https://localhost:8088/launcher
-echo.
-echo  AUTO-LAUNCH FULLSCREEN DISPLAYS:
+echo  AUTO-LAUNCHING FULLSCREEN DISPLAYS:
 echo  - Display 1: Picture Frame Monitor (/display/frame)
-echo  - Display 2: Overhead Table Projector (/display/table)
-echo  - Display 3: Window 53" TV (/display/window)
+echo  - Display 2: Window 53" TV (/display/window)
+echo  - Display 3: Overhead Table Projector (/display/table)
+echo.
+echo  MINI PC MONITOR LAUNCHER (Optional Dashboard):
+echo  ^> https://localhost:8088/launcher
 echo  -----------------------------------------------------------------------------
 echo.
 echo  Press Ctrl+C to stop the server at any time.
 echo.
-
-start "" "https://localhost:8088/launcher"
 
 rem Try python first, then py launcher
 python -V >nul 2>&1
