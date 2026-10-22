@@ -198,9 +198,9 @@ def launch_all_displays(config: Dict[str, Any], base_url: str = "https://localho
     logger.info(f"Detected {len(monitors)} monitor(s) on Windows: {monitors}")
 
     display_mapping = config.get("display_mapping", {
-        "frame": 1,
-        "window": 2,
-        "table": 3
+        "frame": 2,
+        "window": 3,
+        "table": 1
     })
 
     # Base profile directory to keep displays independent from regular browsing
@@ -209,9 +209,9 @@ def launch_all_displays(config: Dict[str, Any], base_url: str = "https://localho
 
     results = {}
     screen_targets = [
-        ("frame", "Picture Frame Monitor", display_mapping.get("frame", 1)),
-        ("window", "53\" Window TV", display_mapping.get("window", 2)),
-        ("table", "Overhead Table Projector", display_mapping.get("table", 3))
+        ("frame", "Picture Frame Monitor", display_mapping.get("frame", 2)),
+        ("window", "53\" Window TV", display_mapping.get("window", 3)),
+        ("table", "Overhead Table Projector", display_mapping.get("table", 1))
     ]
 
     for screen_name, friendly_title, target_display_num in screen_targets:

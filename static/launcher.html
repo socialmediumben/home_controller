@@ -309,9 +309,9 @@
         <div class="master-launch-desc">
           Automatically snaps all three views into borderless fullscreen on their designated physical monitors:
           <div class="monitor-badges-row">
-            <span class="monitor-badge">🖼️ <strong>Display 1:</strong> Picture Frame Monitor</span>
-            <span class="monitor-badge">🪟 <strong>Display 2:</strong> 53" Window TV</span>
-            <span class="monitor-badge">🗺️ <strong>Display 3:</strong> Table Projector</span>
+            <span class="monitor-badge">🗺️ <strong>Display 1:</strong> Table Projector</span>
+            <span class="monitor-badge">🖼️ <strong>Display 2:</strong> Picture Frame Monitor</span>
+            <span class="monitor-badge">🪟 <strong>Display 3:</strong> 53" Window TV</span>
           </div>
         </div>
       </div>
@@ -336,9 +336,9 @@
 
     <!-- 3 Displays Cards -->
     <div class="monitor-launch-grid">
-      <!-- Screen 1: Picture Frame (Display 1) -->
+      <!-- Screen 1: Picture Frame (Display 2) -->
       <div class="monitor-card">
-        <span class="monitor-device-tag" id="tagFrame">DISPLAY 1</span>
+        <span class="monitor-device-tag" id="tagFrame">DISPLAY 2</span>
         <div class="scene-card-header">
           <div class="scene-icon">🖼️</div>
           <div>
@@ -350,7 +350,7 @@
           <span>Target Monitor:</span>
           <select id="selectFrame" class="monitor-select" onchange="onMappingChanged()">
             <option value="1">Display 1</option>
-            <option value="2">Display 2</option>
+            <option value="2" selected>Display 2</option>
             <option value="3">Display 3</option>
           </select>
         </div>
@@ -358,13 +358,13 @@
           <iframe id="iframeFrame" src="/display/frame?v=1.3.8"></iframe>
         </div>
         <a href="/display/frame?v=1.3.8" target="_blank" class="launch-btn" onclick="openFrameScreen(event)">
-          🚀 Open Frame View (Display 1)
+          🚀 Open Frame View (Display 2)
         </a>
       </div>
 
-      <!-- Screen 2: Window TV (Display 2) -->
+      <!-- Screen 2: Window TV (Display 3) -->
       <div class="monitor-card">
-        <span class="monitor-device-tag" id="tagWindow">DISPLAY 2</span>
+        <span class="monitor-device-tag" id="tagWindow">DISPLAY 3</span>
         <div class="scene-card-header">
           <div class="scene-icon">🪟</div>
           <div>
@@ -376,21 +376,21 @@
           <span>Target Monitor:</span>
           <select id="selectWindow" class="monitor-select" onchange="onMappingChanged()">
             <option value="1">Display 1</option>
-            <option value="2" selected>Display 2</option>
-            <option value="3">Display 3</option>
+            <option value="2">Display 2</option>
+            <option value="3" selected>Display 3</option>
           </select>
         </div>
         <div class="monitor-preview-frame">
           <iframe id="iframeWindow" src="/display/window?v=1.3.8"></iframe>
         </div>
         <a href="/display/window?v=1.3.8" target="_blank" class="launch-btn" onclick="openWindowScreen(event)">
-          🚀 Open Window View (Display 2)
+          🚀 Open Window View (Display 3)
         </a>
       </div>
 
-      <!-- Screen 3: Table Projector (Display 3) -->
+      <!-- Screen 3: Table Projector (Display 1) -->
       <div class="monitor-card">
-        <span class="monitor-device-tag" id="tagTable">DISPLAY 3</span>
+        <span class="monitor-device-tag" id="tagTable">DISPLAY 1</span>
         <div class="scene-card-header">
           <div class="scene-icon">🗺️</div>
           <div>
@@ -401,16 +401,16 @@
         <div class="monitor-select-row">
           <span>Target Monitor:</span>
           <select id="selectTable" class="monitor-select" onchange="onMappingChanged()">
-            <option value="1">Display 1</option>
+            <option value="1" selected>Display 1</option>
             <option value="2">Display 2</option>
-            <option value="3" selected>Display 3</option>
+            <option value="3">Display 3</option>
           </select>
         </div>
         <div class="monitor-preview-frame">
           <iframe id="iframeTable" src="/display/table?v=1.3.8"></iframe>
         </div>
         <a href="/display/table?v=1.3.8" target="_blank" class="launch-btn" onclick="openTableScreen(event)">
-          🚀 Open Table View (Display 3)
+          🚀 Open Table View (Display 1)
         </a>
       </div>
     </div>
