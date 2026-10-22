@@ -268,6 +268,28 @@ def launch_all_displays(config: Dict[str, Any], base_url: str = "https://localho
             logger.error(f"Failed to launch {screen_name}: {e}")
             results[screen_name] = {"status": "error", "error": str(e)}
 
+    # Also launch the Launcher window (minimized to taskbar for quick Mini PC access)
+    launcher_profile = os.path.join(base_profile_dir, "profile_launcher")
+    launcher_url = f"{base_url.rstrip('/')}/launcher"
+    launcher_cmd = [
+        browser_exe,
+        f"--app={launcher_url}",
+        f"--user-data-dir={launcher_profile}",
+        "--test-type",
+        "--no-first-run",
+        "--no-default-browser-check",
+        "--ignore-certificate-errors",
+        "--allow-insecure-localhost",
+        "--disable-infobars"
+    ]
+    try:
+        l_proc = subprocess.Popen(launcher_cmd)
+        _launched_display_processes.append(l_proc)
+        results["launcher"] = {"status": "launched", "pid": l_proc.pid}
+        logger.info("Launched Launcher window (will minimize to taskbar)...")
+    except Exception as e:
+        logger.warning(f"Could not launch launcher window: {e}")
+
     # Schedule background verification to ensure Win32 coordinates are locked & in front
     def verify_and_nudge_windows():
         time.sleep(2.0)
@@ -285,10 +307,10 @@ def launch_all_displays(config: Dict[str, Any], base_url: str = "https://localho
                 display_hwnds.add(hwnd)
                 position_window_on_monitor(hwnd, matched_mon)
 
-        # Minimize any launcher browser window so it never obscures the displays
-        time.sleep(0.5)
-        launcher_hwnds = find_windows_by_title_substring("Launcher")
-        for l_hwnd in launcher_hwnds:
+        # Minimize the launcher window so it remains in the taskbar ready for use without covering displays
+        time.sleep(0.8)
+        launcher_hwnds = find_windows_by_title_substring("Launcher") + find_windows_by_title_substring("launcher")
+        for l_hwnd in set(launcher_hwnds):
             if l_hwnd not in display_hwnds:
                 ctypes.windll.user32.ShowWindow(l_hwnd, SW_MINIMIZE)
 

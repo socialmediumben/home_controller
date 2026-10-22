@@ -46,11 +46,13 @@ A unified local controller for a Dungeons & Dragons game room decorated as a wiz
      * **Display 1:** Picture Frame Monitor (`/display/frame`)
      * **Display 2:** Window (53" TV) (`/display/window`)
      * **Display 3:** Overhead Table Projector (`/display/table`)
-   * **Launcher Dashboard:** `https://localhost:8088/launcher` opens automatically, featuring an instant **"Auto-Launch All Displays Fullscreen"** button whenever you need to snap displays back.
+   * **Launcher Dashboard:** Auto-opened and minimized in the Windows taskbar, featuring an instant **"Auto-Launch All Displays Fullscreen"** button whenever you need to snap displays back.
 3. **Connect your Tablet or Laptop ("Spellbook"):**
    * Make sure your tablet/laptop is on the same home Wi-Fi network.
-   * Open the URL shown in `run.bat` (e.g. `https://192.168.12.129:8088/spellbook`).
-   * *(Note: On first load, your browser will display a standard "Connection is not private / Self-Signed" notice. Click **Advanced ➔ Proceed** once. This unlocks the Secure Context required for screen and window mirroring!)*
+   * Open the URL shown in `run.bat` (e.g. `https://<MINI_PC_IP>:8088/spellbook`).
+   * *(Note: Be sure to type `https://`! On first load, your browser will display a standard "Connection is not private / Self-Signed" notice. Click **Advanced ➔ Proceed** once. This unlocks the Secure Context required for screen and window mirroring!)*
+   * *(Alternative: You can also open `http://<MINI_PC_IP>` or `http://<MINI_PC_IP>:8080` and the server will automatically redirect you to HTTPS!)*
+   * If you experience a timeout, double-click `allow_firewall.bat` on the Mini PC once to ensure Windows Defender Firewall allows incoming Wi-Fi connections.
    * Verify that the top header shows `v1.3.8 ● Synced`!
 
 ---

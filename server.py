@@ -1023,17 +1023,53 @@ app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 if __name__ == "__main__":
     import uvicorn
+    import http.server
+    import threading
+
     port = config.get("server", {}).get("port", 8088)
     ssl_enabled = config.get("server", {}).get("ssl", True)
     local_ip = get_local_ip()
 
+    def start_http_redirectors(target_https_port: int, ip_addr: str):
+        class RedirectHandler(http.server.BaseHTTPRequestHandler):
+            def do_GET(self):
+                raw_host = self.headers.get("Host", "").split(":")[0]
+                host = raw_host if raw_host and raw_host != "0.0.0.0" else ip_addr
+                path = self.path if self.path and self.path != "/" else "/spellbook"
+                target = f"https://{host}:{target_https_port}{path}"
+                self.send_response(307)
+                self.send_header("Location", target)
+                self.send_header("Connection", "close")
+                self.send_header("Content-Length", "0")
+                self.end_headers()
+
+            def do_POST(self):
+                self.do_GET()
+
+            def do_HEAD(self):
+                self.do_GET()
+
+            def log_message(self, format, *args):
+                pass
+
+        for redirect_port in (80, 8080):
+            try:
+                srv = http.server.HTTPServer(("0.0.0.0", redirect_port), RedirectHandler)
+                t = threading.Thread(target=srv.serve_forever, daemon=True)
+                t.start()
+                logger.info(f"  -> HTTP Auto-Redirector active on port {redirect_port} -> https://{ip_addr}:{target_https_port}")
+            except Exception as e:
+                logger.debug(f"Port {redirect_port} redirector skipped: {e}")
+
     if ssl_enabled:
         try:
             cert_path, key_path = ensure_ssl_certificates(local_ip)
+            start_http_redirectors(port, local_ip)
             logger.info("=" * 64)
             logger.info(f"  GRIMOIRE SECURE HTTPS SERVER ACTIVE (v{APP_VERSION})")
             logger.info(f"  -> Tablet:   https://{local_ip}:{port}/spellbook")
             logger.info(f"  -> Launcher: https://localhost:{port}/launcher")
+            logger.info(f"  -> Quick Web Link: http://{local_ip} (auto-redirects to HTTPS)")
             logger.info("=" * 64)
             uvicorn.run(
                 app,
