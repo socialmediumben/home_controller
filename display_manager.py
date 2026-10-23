@@ -196,6 +196,13 @@ def close_all_displays() -> int:
         except Exception:
             pass
 
+    # 4. Guarantee termination of any lingering Chrome kiosk profile processes
+    try:
+        ps_cmd = 'Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -like "*grimoire_kiosk_profiles*" -and $_.CommandLine -notlike "*profile_launcher*" } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force }'
+        subprocess.run(["powershell", "-NoProfile", "-Command", ps_cmd], capture_output=True, timeout=4)
+    except Exception:
+        pass
+
     return count
 
 def launch_all_displays(config: Dict[str, Any], base_url: str = "https://localhost:8088") -> Dict[str, Any]:

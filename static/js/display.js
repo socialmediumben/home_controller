@@ -698,10 +698,10 @@ function handleBinaryMirrorFrame(arrayBuffer) {
 }
 
 function stopMirroringDisplay() {
-  if (!isMirroring && (!mirrorLayer || mirrorLayer.style.display === 'none')) return;
-  console.log(`%c[Grimoire Display: ${currentScreen}] Stopping screen mirror...`, "color: #f97316; font-weight: bold;");
+  console.log(`%c[Grimoire Display: ${currentScreen}] Force stopping screen mirror and restoring display...`, "color: #f97316; font-weight: bold;");
   isMirroring = false;
   receivedFrameCount = 0;
+
   if (mirrorWatchdogTimer) {
     clearTimeout(mirrorWatchdogTimer);
     mirrorWatchdogTimer = null;
@@ -715,8 +715,12 @@ function stopMirroringDisplay() {
     mirrorPc = null;
   }
   if (mirrorVideo) {
-    try { mirrorVideo.pause(); } catch(e) {}
-    mirrorVideo.srcObject = null;
+    try {
+      mirrorVideo.pause();
+      mirrorVideo.src = '';
+      mirrorVideo.srcObject = null;
+      mirrorVideo.load();
+    } catch(e) {}
   }
   if (mirrorCtx && mirrorCanvas) {
     mirrorCtx.clearRect(0, 0, mirrorCanvas.width, mirrorCanvas.height);
@@ -725,7 +729,9 @@ function stopMirroringDisplay() {
     mirrorLayer.style.display = 'none';
     mirrorLayer.style.opacity = '0';
   }
-  if (mirrorBadge) mirrorBadge.style.display = 'none';
+  if (mirrorBadge) {
+    mirrorBadge.style.display = 'none';
+  }
 
   // Restore layer visibility
   if (layerA) layerA.style.display = '';
@@ -734,6 +740,8 @@ function stopMirroringDisplay() {
   // Restore current preset overlays & display
   if (currentDisplayState) {
     renderDisplay(currentDisplayState, true);
+  } else {
+    fetchCurrentState();
   }
 }
 
@@ -783,7 +791,7 @@ function connectWebSocket() {
 
       } else if (msg.event === 'SCENE_CHANGED') {
         console.log(`%c[Grimoire Display: ${currentScreen}] Received SCENE_CHANGED: '${msg.scene ? msg.scene.name : msg.state.scene_name}'`, "color: #f59e0b; font-weight: bold; font-size: 13px;");
-        if (isMirroring) stopMirroringDisplay();
+        stopMirroringDisplay();
         const displays = msg.state ? msg.state.displays : null;
         if (displays && displays[currentScreen]) {
           renderDisplay(displays[currentScreen]);
@@ -792,8 +800,16 @@ function connectWebSocket() {
       } else if (msg.event === 'DISPLAY_UPDATED') {
         if (msg.screen === currentScreen) {
           console.log(`%c[Grimoire Display: ${currentScreen}] Received DISPLAY_UPDATED:`, "color: #a855f7; font-weight: bold;", msg.display);
-          if (isMirroring) stopMirroringDisplay();
+          stopMirroringDisplay();
           renderDisplay(msg.display);
+        }
+
+      } else if (msg.event === 'STATE_UPDATE') {
+        console.log(`%c[Grimoire Display: ${currentScreen}] Received STATE_UPDATE`, "color: #10b981; font-weight: bold;");
+        stopMirroringDisplay();
+        const displays = msg.state ? msg.state.displays : null;
+        if (displays && displays[currentScreen]) {
+          renderDisplay(displays[currentScreen], true);
         }
 
       } else if (msg.event === 'START_MIRROR_STREAM') {
@@ -812,7 +828,12 @@ function connectWebSocket() {
         }
 
       } else if (msg.event === 'STOP_MIRROR') {
-        if (msg.screen === currentScreen) {
+        if (msg.screen === currentScreen || msg.screen === 'all' || !msg.screen) {
+          stopMirroringDisplay();
+        }
+
+      } else if (msg.event === 'MIRROR_STATUS') {
+        if (!msg.active && (msg.screen === currentScreen || msg.screen === 'all' || !msg.screen)) {
           stopMirroringDisplay();
         }
 

@@ -787,17 +787,29 @@ async def delete_uploaded_media(filename: str):
 @app.post("/api/mirror/stop-all")
 async def stop_all_mirrors_endpoint():
     manager.active_mirrors.clear()
+    await manager.broadcast({"event": "STOP_MIRROR", "screen": "all"})
+    await manager.broadcast({"event": "MIRROR_STATUS", "active": False, "screen": "all"})
     for s in ("window", "frame", "table"):
-        await manager.send_to_type(f"display_{s}", {"event": "STOP_MIRROR", "screen": s})
+        await manager.broadcast({"event": "STOP_MIRROR", "screen": s})
         await manager.broadcast({"event": "MIRROR_STATUS", "screen": s, "active": False})
+    full_state = await get_state()
+    await manager.broadcast({
+        "event": "STATE_UPDATE",
+        "state": full_state["current_state"]
+    })
     return {"status": "ok", "message": "All mirrors stopped and displays restored."}
 
 @app.post("/api/mirror/stop/{screen}")
 async def stop_screen_mirror_endpoint(screen: str):
     if screen in ("window", "frame", "table"):
         manager.active_mirrors.pop(screen, None)
-        await manager.send_to_type(f"display_{screen}", {"event": "STOP_MIRROR", "screen": screen})
+        await manager.broadcast({"event": "STOP_MIRROR", "screen": screen})
         await manager.broadcast({"event": "MIRROR_STATUS", "screen": screen, "active": False})
+        full_state = await get_state()
+        await manager.broadcast({
+            "event": "STATE_UPDATE",
+            "state": full_state["current_state"]
+        })
     return {"status": "ok", "screen": screen}
 
 @app.post("/api/launcher/identify-displays")
