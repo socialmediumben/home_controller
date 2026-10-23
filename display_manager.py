@@ -82,6 +82,26 @@ def get_windows_monitors() -> List[Dict[str, Any]]:
     except Exception as e:
         logger.error(f"Error enumerating Windows displays: {e}")
 
+    # Synchronize index with Windows Display Settings (1, 2, 3):
+    # Windows GDI device names (\\.\DISPLAY1) frequently differ from Windows Display Settings numbers.
+    # When 3 monitors are present with a portrait monitor (Picture Frame):
+    # - Portrait screen (height > width) is Display 1 (Picture Frame Monitor)
+    # - Lower landscape screen (larger Y) is Display 2 (Overhead Table Projector)
+    # - Upper landscape screen (smaller Y) is Display 3 (53" Window TV)
+    if len(monitors) == 3:
+        portrait_mons = [m for m in monitors if m["height"] > m["width"]]
+        if len(portrait_mons) == 1:
+            frame_mon = portrait_mons[0]
+            other_mons = [m for m in monitors if m is not frame_mon]
+            other_mons.sort(key=lambda m: m["y"])
+            window_mon = other_mons[0]
+            table_mon = other_mons[1]
+
+            frame_mon["index"] = 1
+            table_mon["index"] = 2
+            window_mon["index"] = 3
+            logger.info(f"Synchronized with Windows Display Settings: Display 1={frame_mon['device']} (Frame), Display 2={table_mon['device']} (Table), Display 3={window_mon['device']} (Window)")
+
     # Sort primarily by monitor index (DISPLAY1, DISPLAY2, DISPLAY3...)
     monitors.sort(key=lambda m: m["index"])
     return monitors
@@ -200,9 +220,9 @@ def launch_all_displays(config: Dict[str, Any], base_url: str = "https://localho
     logger.info(f"Detected {len(monitors)} monitor(s) on Windows: {monitors}")
 
     display_mapping = config.get("display_mapping", {
-        "frame": 2,
-        "window": 3,
-        "table": 1
+        "frame": 1,
+        "table": 2,
+        "window": 3
     })
 
     # Base profile directory to keep displays independent from regular browsing
@@ -211,9 +231,9 @@ def launch_all_displays(config: Dict[str, Any], base_url: str = "https://localho
 
     results = {}
     screen_targets = [
-        ("frame", "Picture Frame Monitor", display_mapping.get("frame", 2)),
-        ("window", "53\" Window TV", display_mapping.get("window", 3)),
-        ("table", "Overhead Table Projector", display_mapping.get("table", 1))
+        ("frame", "Picture Frame Monitor", display_mapping.get("frame", 1)),
+        ("table", "Overhead Table Projector", display_mapping.get("table", 2)),
+        ("window", "53\" Window TV", display_mapping.get("window", 3))
     ]
 
     for screen_name, friendly_title, target_display_num in screen_targets:

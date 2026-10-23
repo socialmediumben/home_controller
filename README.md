@@ -28,12 +28,12 @@ A unified local controller for a Dungeons & Dragons game room decorated as a wiz
 └────────────┬──────────────┬──────────────┬─────────────┘
              │              │              │
              ▼              ▼              ▼
-       [Table Projector] [Frame Monitor]   [Window TV]
-        Overhead Table   Framed Portrait      53" TV
-          (Display 1)      (Display 2)     (Display 3)
-        Battlemaps, live  Moving artwork   Gothic glass
-       window mirror, or   & NPC clues    ambient weather
-          Roll20 embed   or handout cast  or window cast
+       [Frame Monitor]   [Table Projector]   [Window TV]
+       Framed Portrait    Overhead Table      53" TV
+         (Display 1)        (Display 2)     (Display 3)
+       Moving artwork    Battlemaps, live   Gothic glass
+         & NPC clues     window mirror, or ambient weather
+       or handout cast     Roll20 embed    or window cast
 ```
 
 ---
@@ -42,9 +42,9 @@ A unified local controller for a Dungeons & Dragons game room decorated as a wiz
 
 1. **Double-click `run.bat`** (or open a terminal and run `python server.py`).
 2. The server will start on clean dedicated port **8088** (with automatic self-signed HTTPS enabled):
-   * **Automatic Multi-Monitor Launch:** The server automatically launches all 3 displays directly onto their physical monitors in borderless fullscreen:
-     * **Display 1:** Overhead Table Projector (`/display/table`)
-     * **Display 2:** Picture Frame Monitor (`/display/frame`)
+   * **Automatic Multi-Monitor Launch:** The server automatically launches all 3 displays directly onto their physical monitors in borderless fullscreen matching your Windows Display Settings:
+     * **Display 1:** Picture Frame Monitor (`/display/frame`)
+     * **Display 2:** Overhead Table Projector (`/display/table`)
      * **Display 3:** Window (53" TV) (`/display/window`)
    * **Launcher Dashboard:** Auto-opened and minimized in the Windows taskbar, featuring an instant **"Auto-Launch All Displays Fullscreen"** button whenever you need to snap displays back.
 3. **Connect your Tablet or Laptop ("Spellbook"):**

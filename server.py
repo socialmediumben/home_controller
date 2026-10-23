@@ -201,7 +201,7 @@ def load_config() -> Dict[str, Any]:
     if "display_mapping" in secrets:
         cfg["display_mapping"] = secrets["display_mapping"]
     else:
-        cfg.setdefault("display_mapping", {"auto_launch": True, "frame": 2, "window": 3, "table": 1})
+        cfg.setdefault("display_mapping", {"auto_launch": True, "frame": 1, "table": 2, "window": 3})
 
     return cfg
 
@@ -802,7 +802,7 @@ async def stop_screen_mirror_endpoint(screen: str):
 
 @app.post("/api/launcher/identify-displays")
 async def identify_displays():
-    mapping = config.get("display_mapping", {"auto_launch": True, "frame": 2, "window": 3, "table": 1})
+    mapping = config.get("display_mapping", {"auto_launch": True, "frame": 1, "table": 2, "window": 3})
     logger.info("--> [IDENTIFY DISPLAYS] Broadcasting 12s ID banner to all displays")
     await manager.broadcast({
         "event": "IDENTIFY_DISPLAYS",
@@ -825,7 +825,7 @@ async def open_all_displays():
 @app.get("/api/launcher/monitors")
 async def get_monitors():
     monitors = display_manager.get_windows_monitors()
-    mapping = config.get("display_mapping", {"auto_launch": True, "frame": 2, "window": 3, "table": 1})
+    mapping = config.get("display_mapping", {"auto_launch": True, "frame": 1, "table": 2, "window": 3})
     return {
         "status": "ok",
         "monitors": monitors,

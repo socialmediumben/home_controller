@@ -35,8 +35,8 @@ echo  * If your browser shows "Your connection is not private":
 echo    Click "Advanced" and then click "Proceed" to continue.
 echo.
 echo  AUTO-LAUNCHING FULLSCREEN DISPLAYS:
-echo  - Display 1: Overhead Table Projector (/display/table)
-echo  - Display 2: Picture Frame Monitor (/display/frame)
+echo  - Display 1: Picture Frame Monitor (/display/frame)
+echo  - Display 2: Overhead Table Projector (/display/table)
 echo  - Display 3: Window 53" TV (/display/window)
 echo.
 echo  MINI PC MONITOR LAUNCHER:

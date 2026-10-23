@@ -17,9 +17,9 @@
   "table_grid_size": 22,
   "display_mapping": {
     "auto_launch": true,
-    "frame": 2,
-    "window": 3,
-    "table": 1
+    "frame": 1,
+    "table": 2,
+    "window": 3
   },
   "home_assistant": {
     "enabled": false,
