@@ -670,9 +670,10 @@ function handleBinaryMirrorFrame(arrayBuffer) {
   const targetName = screenCode === 0 ? 'window' : screenCode === 1 ? 'frame' : 'table';
   if (targetName !== currentScreen) return;
 
-  if (!isMirroring) {
-    startMirroringDisplay();
-  }
+  // Only process binary mirror frames if mirroring was explicitly activated.
+  // Prevents stray frames from background tabs/workers from waking up mirror mode.
+  if (!isMirroring) return;
+
   resetMirrorWatchdog();
 
   receivedFrameCount++;

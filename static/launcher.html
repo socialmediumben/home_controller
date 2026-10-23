@@ -454,7 +454,8 @@
       .then(r => r.json())
       .then(info => {
         if (info.monitors && info.monitors.length > 0) {
-          document.getElementById('launchAllStatus').textContent = `Ready • ${info.monitors.length} Windows monitor(s) detected`;
+          const bName = info.browser_path && info.browser_path.toLowerCase().includes('chrome') ? 'Google Chrome' : 'Edge';
+          document.getElementById('launchAllStatus').textContent = `Ready • ${info.monitors.length} Monitors detected • Using ${bName}`;
         }
         if (info.display_mapping) {
           applyMappingToUI(info.display_mapping);

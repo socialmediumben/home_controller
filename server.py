@@ -838,10 +838,12 @@ async def open_all_displays():
 async def get_monitors():
     monitors = display_manager.get_windows_monitors()
     mapping = config.get("display_mapping", {"auto_launch": True, "frame": 1, "table": 2, "window": 3})
+    browser_exe = display_manager.get_browser_executable()
     return {
         "status": "ok",
         "monitors": monitors,
-        "display_mapping": mapping
+        "display_mapping": mapping,
+        "browser_path": browser_exe
     }
 
 @app.post("/api/launcher/display-mapping")
@@ -895,12 +897,20 @@ async def websocket_endpoint(websocket: WebSocket):
                 if len(raw_bytes) > 4 and raw_bytes[:3] == b"MIR":
                     screen_code = raw_bytes[3]
                     screen_name = "window" if screen_code == 0 else "frame" if screen_code == 1 else "table"
-                    forward_count = await manager.send_bytes_to_type(f"display_{screen_name}", raw_bytes)
-                    if not hasattr(manager, "_mirror_count"):
-                        manager._mirror_count = 0
-                    manager._mirror_count += 1
-                    if manager._mirror_count == 1 or manager._mirror_count % 300 == 0:
-                        logger.info(f"--> [MIRROR STREAM] Forwarded frame #{manager._mirror_count} ({len(raw_bytes)} bytes) to display_{screen_name} (destinations: {forward_count})")
+                    # Only forward frames if this screen is actively in mirror mode!
+                    if manager.active_mirrors.get(screen_name):
+                        forward_count = await manager.send_bytes_to_type(f"display_{screen_name}", raw_bytes)
+                        if not hasattr(manager, "_mirror_count"):
+                            manager._mirror_count = 0
+                        manager._mirror_count += 1
+                        if manager._mirror_count == 1 or manager._mirror_count % 300 == 0:
+                            logger.info(f"--> [MIRROR STREAM] Forwarded frame #{manager._mirror_count} ({len(raw_bytes)} bytes) to display_{screen_name} (destinations: {forward_count})")
+                    else:
+                        # Mirroring is not active on this screen; tell sender to stop streaming
+                        try:
+                            await websocket.send_json({"event": "STOP_MIRROR", "screen": screen_name})
+                        except Exception:
+                            pass
                 continue
 
             if "text" not in ws_msg or not ws_msg["text"]:

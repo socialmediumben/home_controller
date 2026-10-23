@@ -317,7 +317,26 @@ function initWebSocket() {
           }
         }
 
+      } else if (msg.event === 'STOP_MIRROR') {
+        const s = msg.screen;
+        if (s === 'all') {
+          for (const k of Object.keys(activeMirrorSessions)) {
+            stopModalMirror(k);
+          }
+        } else if (s && activeMirrorSessions[s]) {
+          stopModalMirror(s);
+        }
       } else if (msg.event === 'MIRROR_STATUS') {
+        if (!msg.active) {
+          const s = msg.screen;
+          if (s === 'all') {
+            for (const k of Object.keys(activeMirrorSessions)) {
+              stopModalMirror(k);
+            }
+          } else if (s && activeMirrorSessions[s]) {
+            stopModalMirror(s);
+          }
+        }
         handleMirrorStatusUpdate(msg.screen, msg.active);
       }
     } catch (e) {
@@ -1570,10 +1589,26 @@ async function deleteCustomMap(filename, event) {
 }
 
 async function stopAllMirrors() {
+  // Stop all active local screen mirroring sessions and background workers
+  for (const s of ['table', 'window', 'frame']) {
+    const session = activeMirrorSessions[s];
+    if (session) {
+      if (typeof session.stop === 'function') {
+        session.stop();
+      } else {
+        if (session.stream) try { session.stream.getTracks().forEach(t => t.stop()); } catch (e) {}
+        if (session.pc) try { session.pc.close(); } catch (e) {}
+      }
+      delete activeMirrorSessions[s];
+    }
+  }
+  updateMirrorModalState();
+
   if (ws && ws.readyState === WebSocket.OPEN) {
     ws.send(JSON.stringify({ action: "STOP_MIRROR", screen: "table" }));
     ws.send(JSON.stringify({ action: "STOP_MIRROR", screen: "window" }));
     ws.send(JSON.stringify({ action: "STOP_MIRROR", screen: "frame" }));
+    ws.send(JSON.stringify({ action: "STOP_MIRROR", screen: "all" }));
   }
   try {
     await fetch('/api/mirror/stop-all', { method: 'POST' });
