@@ -264,6 +264,8 @@ class ConnectionManager:
     def __init__(self):
         # Maps websocket -> client_info dict
         self.clients: Dict[WebSocket, Dict[str, Any]] = {}
+        # Maps screen ("window" | "frame" | "table") -> sender client_id
+        self.active_mirrors: Dict[str, str] = {}
 
     async def connect(self, websocket: WebSocket) -> str:
         await websocket.accept()
@@ -280,10 +282,18 @@ class ConnectionManager:
     def get_client_id(self, websocket: WebSocket) -> str:
         return self.clients.get(websocket, {}).get("client_id", "")
 
-    def disconnect(self, websocket: WebSocket):
+    def disconnect(self, websocket: WebSocket) -> List[str]:
         client_info = self.clients.pop(websocket, None)
         c_type = client_info.get("type", "unknown") if client_info else "unknown"
-        logger.info(f"Client disconnected: {c_type}. Remaining peers: {len(self.clients)}")
+        cid = client_info.get("client_id", "") if client_info else ""
+        logger.info(f"Client disconnected: {c_type} ({cid}). Remaining peers: {len(self.clients)}")
+        orphaned_screens = []
+        if cid:
+            for screen, owner_id in list(self.active_mirrors.items()):
+                if owner_id == cid:
+                    self.active_mirrors.pop(screen, None)
+                    orphaned_screens.append(screen)
+        return orphaned_screens
 
     async def send_to_id(self, client_id: str, message: dict) -> bool:
         for ws, info in list(self.clients.items()):
@@ -744,6 +754,63 @@ async def upload_media(file: UploadFile = File(...)):
     file_url = f"/static/media/uploads/{clean_filename}"
     return {"status": "ok", "url": file_url, "filename": clean_filename}
 
+@app.get("/api/media/list")
+async def list_uploaded_media():
+    files = []
+    if os.path.exists(UPLOADS_DIR):
+        for f in os.listdir(UPLOADS_DIR):
+            file_path = os.path.join(UPLOADS_DIR, f)
+            if os.path.isfile(file_path):
+                stat = os.stat(file_path)
+                files.append({
+                    "name": f,
+                    "url": f"/static/media/uploads/{f}",
+                    "size": stat.st_size,
+                    "modified": stat.st_mtime
+                })
+    # Sort newest first
+    files.sort(key=lambda x: x["modified"], reverse=True)
+    return {"status": "ok", "files": files}
+
+@app.delete("/api/media/{filename}")
+async def delete_uploaded_media(filename: str):
+    clean_filename = "".join(c for c in filename if c.isalnum() or c in (".", "_", "-")).strip()
+    target_path = os.path.join(UPLOADS_DIR, clean_filename)
+    if os.path.isfile(target_path):
+        try:
+            os.remove(target_path)
+            return {"status": "ok", "deleted": clean_filename}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+    return {"status": "not_found", "filename": clean_filename}
+
+@app.post("/api/mirror/stop-all")
+async def stop_all_mirrors_endpoint():
+    manager.active_mirrors.clear()
+    for s in ("window", "frame", "table"):
+        await manager.send_to_type(f"display_{s}", {"event": "STOP_MIRROR", "screen": s})
+        await manager.broadcast({"event": "MIRROR_STATUS", "screen": s, "active": False})
+    return {"status": "ok", "message": "All mirrors stopped and displays restored."}
+
+@app.post("/api/mirror/stop/{screen}")
+async def stop_screen_mirror_endpoint(screen: str):
+    if screen in ("window", "frame", "table"):
+        manager.active_mirrors.pop(screen, None)
+        await manager.send_to_type(f"display_{screen}", {"event": "STOP_MIRROR", "screen": screen})
+        await manager.broadcast({"event": "MIRROR_STATUS", "screen": screen, "active": False})
+    return {"status": "ok", "screen": screen}
+
+@app.post("/api/launcher/identify-displays")
+async def identify_displays():
+    mapping = config.get("display_mapping", {"auto_launch": True, "frame": 2, "window": 3, "table": 1})
+    logger.info("--> [IDENTIFY DISPLAYS] Broadcasting 12s ID banner to all displays")
+    await manager.broadcast({
+        "event": "IDENTIFY_DISPLAYS",
+        "seconds": 12,
+        "mapping": mapping
+    })
+    return {"status": "ok", "message": "Display identification triggered for 12 seconds."}
+
 # Multi-Monitor Display Launch Endpoints
 @app.post("/api/launcher/open-displays")
 async def open_all_displays():
@@ -799,6 +866,15 @@ async def websocket_endpoint(websocket: WebSocket):
         while True:
             ws_msg = await websocket.receive()
             if ws_msg.get("type") == "websocket.disconnect":
+                orphaned = manager.disconnect(websocket)
+                for s in orphaned:
+                    logger.info(f"--> [AUTO-STOP MIRROR] Disconnect event; stopping mirror on display_{s}")
+                    await manager.send_to_type(f"display_{s}", {"event": "STOP_MIRROR", "screen": s})
+                    await manager.broadcast({"event": "MIRROR_STATUS", "screen": s, "active": False})
+                await manager.broadcast({
+                    "event": "PEER_STATUS",
+                    "peers": manager.get_peer_status()
+                })
                 break
 
             if "bytes" in ws_msg and ws_msg["bytes"]:
@@ -844,6 +920,7 @@ async def websocket_endpoint(websocket: WebSocket):
                         "selected_devices": full_state["selected_devices"],
                         "selected_scenes": full_state["selected_scenes"],
                         "peers": manager.get_peer_status(),
+                        "active_mirrors": dict(manager.active_mirrors),
                         "network": {
                             "local_ip": get_local_ip(),
                             "port": port
@@ -928,6 +1005,8 @@ async def websocket_endpoint(websocket: WebSocket):
 
                     if signal_type == "offer":
                         logger.info(f"--> [WEBRTC OFFER] From {sender_id} ({sender_ip}) to display_{target_screen}")
+                        if target_screen:
+                            manager.active_mirrors[target_screen] = sender_id
                         sent_count = await manager.send_to_type(f"display_{target_screen}", forward_msg)
                         logger.info(f"--> [WEBRTC OFFER] Delivered to {sent_count} display_{target_screen} client(s)")
                         await manager.broadcast({
@@ -949,6 +1028,7 @@ async def websocket_endpoint(websocket: WebSocket):
                     options = msg.get("options", {})
                     logger.info(f"--> [MIRROR STREAM START] Screen: {screen}, Options: {options}")
                     if screen:
+                        manager.active_mirrors[screen] = client_id
                         await manager.send_to_type(f"display_{screen}", {
                             "event": "START_MIRROR_STREAM",
                             "screen": screen,
@@ -964,6 +1044,7 @@ async def websocket_endpoint(websocket: WebSocket):
                     screen = msg.get("screen")
                     logger.info(f"--> [STOP MIRROR] Screen: {screen}")
                     if screen:
+                        manager.active_mirrors.pop(screen, None)
                         await manager.send_to_type(f"display_{screen}", {
                             "event": "STOP_MIRROR",
                             "screen": screen
@@ -989,7 +1070,11 @@ async def websocket_endpoint(websocket: WebSocket):
                 logger.error(f"WebSocket processing error: {e}")
 
     except WebSocketDisconnect:
-        manager.disconnect(websocket)
+        orphaned = manager.disconnect(websocket)
+        for s in orphaned:
+            logger.info(f"--> [AUTO-STOP MIRROR] WebSocket disconnected; stopping mirror on display_{s}")
+            await manager.send_to_type(f"display_{s}", {"event": "STOP_MIRROR", "screen": s})
+            await manager.broadcast({"event": "MIRROR_STATUS", "screen": s, "active": False})
         # Notify remaining peers
         await manager.broadcast({
             "event": "PEER_STATUS",

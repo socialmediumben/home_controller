@@ -315,11 +315,21 @@
           </div>
         </div>
       </div>
-      <div class="master-launch-actions">
-        <button id="btnLaunchAll" class="master-launch-btn" onclick="autoLaunchAllDisplays()">
-          <span>⚡</span> Launch All Displays Now
-        </button>
-        <div id="launchAllStatus" class="launch-status-text">Ready • Monitors mapped</div>
+      <div class="master-launch-actions" style="display: flex; flex-direction: column; gap: 8px; align-items: flex-end;">
+        <div style="display: flex; gap: 8px;">
+          <button id="btnIdentify" class="master-launch-btn" style="background: linear-gradient(135deg, #0284c7, #0369a1); border-color: #38bdf8;" onclick="identifyDisplays()">
+            <span>🔍</span> Identify Displays
+          </button>
+          <button id="btnLaunchAll" class="master-launch-btn" onclick="autoLaunchAllDisplays()">
+            <span>⚡</span> Launch All Displays Now
+          </button>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <button id="btnStopMirrors" style="background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.5); color: #fca5a5; padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer;" onclick="stopAllMirrorsFromLauncher()">
+            ⏹ Stop Mirrors / Reset Views
+          </button>
+          <div id="launchAllStatus" class="launch-status-text">Ready • Monitors mapped</div>
+        </div>
       </div>
     </div>
 
@@ -525,6 +535,32 @@
         }
       }
       console.log(`%c[Grimoire Launcher] Active Peers:`, "color: #38bdf8;", peers);
+    }
+
+    async function identifyDisplays() {
+      const status = document.getElementById('launchAllStatus');
+      status.textContent = 'Flashing ID labels on all 3 game room displays for 12 seconds...';
+      status.style.color = '#38bdf8';
+      try {
+        await fetch('/api/launcher/identify-displays', { method: 'POST' });
+      } catch (err) {
+        console.error('Error identifying displays:', err);
+      }
+    }
+
+    async function stopAllMirrorsFromLauncher() {
+      const status = document.getElementById('launchAllStatus');
+      status.textContent = 'Stopping all screen mirrors and restoring display views...';
+      status.style.color = '#fcd34d';
+      try {
+        const resp = await fetch('/api/mirror/stop-all', { method: 'POST' });
+        const data = await resp.json();
+        status.textContent = '✓ Mirrors Stopped & Displays Restored!';
+        status.style.color = '#6ee7b7';
+      } catch (err) {
+        status.textContent = 'Error: ' + err.message;
+        status.style.color = '#f87171';
+      }
     }
 
     async function autoLaunchAllDisplays() {

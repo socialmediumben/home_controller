@@ -476,6 +476,17 @@ async function handleMirrorOffer(msg) {
     console.log(`%c[Grimoire Display: ${currentScreen}] Remote media track attached:`, "color: #10b981; font-weight: bold;", event.track.kind);
     startMirroringDisplay(msg.options);
 
+    // Watch for track disconnect / end from casting source
+    if (event.track) {
+      event.track.onended = () => {
+        console.warn(`[Grimoire Display: ${currentScreen}] WebRTC media track ended. Restoring display.`);
+        stopMirroringDisplay();
+      };
+      event.track.onmute = () => {
+        console.warn(`[Grimoire Display: ${currentScreen}] WebRTC media track muted.`);
+      };
+    }
+
     if (mirrorVideo) {
       const stream = (event.streams && event.streams.length > 0) ? event.streams[0] : new MediaStream([event.track]);
       mirrorVideo.srcObject = stream;
@@ -756,6 +767,12 @@ function connectWebSocket() {
 
       if (msg.event === 'HANDSHAKE_ACK') {
         console.log(`%c[Grimoire Display: ${currentScreen}] Handshake ACK from Server v${msg.server_version}!`, "background: #065f46; color: #a7f3d0; font-weight: bold; padding: 2px 6px; border-radius: 3px;");
+        // If server says no mirror is active on this screen, ensure mirror is closed and display is restored
+        const hasMirror = msg.active_mirrors && Boolean(msg.active_mirrors[currentScreen]);
+        if (!hasMirror && isMirroring) {
+          console.log(`[Grimoire Display: ${currentScreen}] No active mirror reported by server; resetting mirror mode.`);
+          stopMirroringDisplay();
+        }
         const displays = msg.state ? msg.state.displays : null;
         if (displays && displays[currentScreen]) {
           currentDisplayState = displays[currentScreen];
@@ -798,6 +815,9 @@ function connectWebSocket() {
         if (msg.screen === currentScreen) {
           stopMirroringDisplay();
         }
+
+      } else if (msg.event === 'IDENTIFY_DISPLAYS') {
+        showIdentificationOverlay(msg.seconds || 10, msg.mapping);
       }
     } catch (e) {
       console.error(`[Grimoire Display: ${currentScreen}] Error handling WS message:`, e);
@@ -851,6 +871,38 @@ async function exitFullscreen() {
     } catch (err) {}
   }
   fetch(`/api/launcher/window-restore?screen=${currentScreen}`, { method: 'POST' }).catch(() => {});
+}
+
+// Display Identification Overlay
+let identifyTimer = null;
+function showIdentificationOverlay(durationSeconds, mapping) {
+  const overlay = document.getElementById('identifyOverlay');
+  if (!overlay) return;
+  const icon = document.getElementById('identifyIcon');
+  const title = document.getElementById('identifyTitle');
+  const subtitle = document.getElementById('identifySubtitle');
+  const details = document.getElementById('identifyDetails');
+
+  const screenIcons = { window: '🪟', frame: '🖼️', table: '🗺️' };
+  const screenNames = {
+    window: '53" Window TV View',
+    frame: 'Picture Frame View',
+    table: 'Overhead Table Projector View'
+  };
+
+  const assignedMon = (mapping && mapping[currentScreen] !== undefined) ? mapping[currentScreen] : '?';
+
+  if (icon) icon.textContent = screenIcons[currentScreen] || '🖥️';
+  if (title) title.textContent = screenNames[currentScreen] || currentScreen.toUpperCase();
+  if (subtitle) subtitle.textContent = `TARGET MONITOR: DISPLAY ${assignedMon}`;
+  if (details) details.textContent = `Current Window: ${window.innerWidth} x ${window.innerHeight} px • Endpoint: /display/${currentScreen}`;
+
+  overlay.style.display = 'flex';
+
+  if (identifyTimer) clearTimeout(identifyTimer);
+  identifyTimer = setTimeout(() => {
+    overlay.style.display = 'none';
+  }, (durationSeconds || 10) * 1000);
 }
 
 // Start immediately

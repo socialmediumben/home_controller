@@ -132,6 +132,11 @@
 
     <!-- Tab 2: Individual Screen Overrides -->
     <main id="tabDisplays" class="tab-content">
+      <div style="display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-bottom: 12px;">
+        <button class="grimoire-btn" style="font-size: 12px; padding: 6px 14px; border-color: rgba(239, 68, 68, 0.5); color: #fca5a5; background: rgba(239, 68, 68, 0.12); display: flex; align-items: center; gap: 6px;" onclick="stopAllMirrors()">
+          <span>⏹</span> Stop All Mirroring / Reset Displays
+        </button>
+      </div>
       <div class="screens-grid">
         <!-- 1. Window TV -->
         <div class="screen-box">
@@ -251,6 +256,10 @@
             <div class="option-item" onclick="openMirrorModal('table')" style="border-color: rgba(56, 189, 248, 0.4); background: rgba(56, 189, 248, 0.08);">
               <span>🖥️ Mirror Window / Screen to Table</span>
               <span class="mini-badge" id="badgeMirrorTable" style="border-color: #38bdf8; color: #38bdf8;">Cast</span>
+            </div>
+            <div class="option-item" onclick="openCustomMapsModal()" style="border-color: rgba(52, 211, 153, 0.5); background: rgba(5, 150, 105, 0.15);">
+              <span>🗺️ Custom Battlemaps & Uploads</span>
+              <span class="mini-badge" style="border-color: #34d399; color: #34d399;">+ Library</span>
             </div>
             <div class="option-item" onclick="setTableMap('/static/media/tables/library.svg', 'The Arcane Library')">
               <span>📚 The Arcane Library</span>
@@ -605,7 +614,12 @@
           </div>
           <div class="form-group">
             <label>Map Image Source (Path or Uploaded URL):</label>
-            <input type="text" id="presetTableSrc" placeholder="/static/media/tables/library.svg">
+            <div style="display: flex; gap: 8px;">
+              <input type="text" id="presetTableSrc" placeholder="/static/media/tables/library.svg" style="flex: 1;">
+              <button type="button" class="grimoire-btn" style="padding: 4px 10px; font-size: 11px; white-space: nowrap; border-color: #34d399; color: #34d399;" onclick="openCustomMapsModal(true)">
+                📂 Choose Map
+              </button>
+            </div>
           </div>
           <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; align-items: center;">
             <label style="cursor: pointer; display: flex; align-items: center; gap: 6px;">
@@ -653,13 +667,53 @@
         <div id="uploadResultUrlContainer" style="display: none; margin-top: 10px; background: rgba(0,0,0,0.4); padding: 8px; border-radius: 6px; border: 1px dashed var(--gold-accent);">
           <div style="font-size: 11px; color: var(--gold-accent);">File Uploaded Successfully! URL:</div>
           <div id="uploadResultUrl" style="font-family: monospace; font-size: 12px; color: #38bdf8; word-break: break-all; margin: 4px 0;"></div>
-          <button class="grimoire-btn" style="padding: 3px 8px; font-size: 11px;" onclick="copyUploadedUrl()">📋 Copy URL</button>
+          <div style="display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap;">
+            <button class="grimoire-btn" style="padding: 3px 8px; font-size: 11px;" onclick="copyUploadedUrl()">📋 Copy URL</button>
+            <button class="grimoire-btn" style="padding: 3px 8px; font-size: 11px; border-color: #34d399; color: #34d399;" onclick="castUploadedToTable()">🗺️ Cast to Table</button>
+            <button class="grimoire-btn" style="padding: 3px 8px; font-size: 11px; border-color: #a855f7; color: #d8b4fe;" onclick="castUploadedToFrame()">🖼️ Cast to Frame</button>
+          </div>
         </div>
         <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px;">
           <button class="grimoire-btn" onclick="closeMediaUploadModal()">Close</button>
           <button id="uploadSubmitBtn" class="grimoire-btn" style="background: var(--gold-accent); color: #1c150c; font-weight: bold;" onclick="submitMediaUpload()">
             🚀 Upload File
           </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Custom Battlemaps & Uploads Modal -->
+    <div id="customMapsModal" class="modal-overlay">
+      <div class="modal-box" style="max-width: 680px; max-height: 85vh; display: flex; flex-direction: column;">
+        <div class="modal-header">
+          <div class="modal-title">🗺️ Custom Battlemaps & Uploads</div>
+          <button class="modal-close" onclick="closeCustomMapsModal()">✕</button>
+        </div>
+        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px;">
+          Upload your own battlemaps and encounter art. Select any map below to instantly cast it onto your Overhead Table Projector!
+        </p>
+
+        <!-- Upload Dropzone / Button -->
+        <div style="background: rgba(15, 23, 42, 0.6); border: 2px dashed rgba(52, 211, 153, 0.4); border-radius: 12px; padding: 14px; text-align: center; margin-bottom: 14px;">
+          <input type="file" id="customMapFileInput" accept="image/*" style="display: none;" onchange="handleCustomMapUpload(event)">
+          <button type="button" class="grimoire-btn" style="border-color: #34d399; color: #34d399; background: rgba(5, 150, 105, 0.2); font-weight: bold; padding: 8px 18px;" onclick="document.getElementById('customMapFileInput').click()">
+            ⬆️ Upload New Battlemap Image
+          </button>
+          <div id="customMapUploadStatus" style="font-size: 12px; color: #a7f3d0; margin-top: 8px; display: none;"></div>
+        </div>
+
+        <!-- Uploaded Maps Grid -->
+        <div style="flex: 1; overflow-y: auto; padding-right: 4px; min-height: 180px;">
+          <div style="font-size: 11px; font-weight: bold; color: var(--gold-primary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">
+            Your Battlemap Library:
+          </div>
+          <div id="customMapsGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px;">
+            <div style="color: var(--text-muted); font-size: 13px;">Loading uploaded maps...</div>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px; border-top: 1px solid rgba(212, 160, 23, 0.2); padding-top: 12px;">
+          <button class="grimoire-btn" onclick="closeCustomMapsModal()">Done</button>
         </div>
       </div>
     </div>

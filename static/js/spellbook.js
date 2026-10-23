@@ -1401,6 +1401,189 @@ function copyUploadedUrl() {
   });
 }
 
+function castUploadedToTable() {
+  const urlText = document.getElementById('uploadResultUrl').textContent;
+  if (!urlText) return;
+  const fileName = urlText.split('/').pop().replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
+  setTableMap(urlText, fileName);
+  closeMediaUploadModal();
+  playChime(650, 'sine', 0.2);
+  alert(`Casting '${fileName}' to Table Projector!`);
+}
+
+function castUploadedToFrame() {
+  const urlText = document.getElementById('uploadResultUrl').textContent;
+  if (!urlText) return;
+  const fileName = urlText.split('/').pop().replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
+  setFramePortrait(urlText, fileName, "Custom Artwork");
+  closeMediaUploadModal();
+  playChime(650, 'sine', 0.2);
+  alert(`Casting '${fileName}' to Picture Frame!`);
+}
+
+// ==========================================
+// Custom Battlemaps & Uploads Library Modal
+// ==========================================
+let _customMapPickerMode = false;
+
+function openCustomMapsModal(forPresetEditor = false) {
+  _customMapPickerMode = forPresetEditor;
+  const modal = document.getElementById('customMapsModal');
+  if (!modal) return;
+  modal.classList.add('open');
+  loadCustomMapsLibrary();
+}
+
+function closeCustomMapsModal() {
+  const modal = document.getElementById('customMapsModal');
+  if (modal) modal.classList.remove('open');
+}
+
+async function loadCustomMapsLibrary() {
+  const grid = document.getElementById('customMapsGrid');
+  if (!grid) return;
+  grid.innerHTML = '<div style="color: var(--text-muted); font-size: 13px;">Loading battlemap library...</div>';
+
+  try {
+    const res = await fetch('/api/media/list');
+    const data = await res.json();
+    if (!data.files || data.files.length === 0) {
+      grid.innerHTML = `
+        <div style="grid-column: 1 / -1; text-align: center; color: var(--text-muted); padding: 30px; border: 1px dashed rgba(212, 160, 23, 0.2); border-radius: 8px;">
+          <div style="font-size: 32px; margin-bottom: 8px;">🗺️</div>
+          <div>No custom maps uploaded yet.</div>
+          <div style="font-size: 12px; margin-top: 4px; color: #64748b;">Click "Upload New Battlemap Image" above to add your first map!</div>
+        </div>
+      `;
+      return;
+    }
+
+    grid.innerHTML = '';
+    data.files.forEach(file => {
+      const card = document.createElement('div');
+      card.style.cssText = 'background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(212, 160, 23, 0.25); border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; transition: transform 0.2s;';
+      card.onmouseenter = () => card.style.borderColor = '#34d399';
+      card.onmouseleave = () => card.style.borderColor = 'rgba(212, 160, 23, 0.25)';
+
+      const isVideo = file.name.match(/\\.(mp4|webm)$/i);
+      const mediaPreview = isVideo
+        ? `<div style="height: 110px; background: #000; display: flex; align-items: center; justify-content: center; font-size: 28px;">🎬</div>`
+        : `<img src="${file.url}" style="width: 100%; height: 110px; object-fit: cover; background: #000;" onerror="this.src='/static/media/tables/tavern.svg'">`;
+
+      const cleanTitle = file.name.replace(/\\.[^/.]+$/, "").replace(/[-_]/g, " ");
+
+      card.innerHTML = `
+        ${mediaPreview}
+        <div style="padding: 10px; display: flex; flex-direction: column; gap: 6px; flex: 1;">
+          <div style="font-size: 13px; font-weight: bold; color: #f8fafc; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${file.name}">
+            ${cleanTitle}
+          </div>
+          <div style="font-size: 11px; color: #94a3b8; display: flex; justify-content: space-between;">
+            <span>${(file.size / 1024).toFixed(0)} KB</span>
+            <button style="background: none; border: none; color: #ef4444; font-size: 11px; cursor: pointer;" title="Delete" onclick="deleteCustomMap('${file.name}', event)">✕ Delete</button>
+          </div>
+          <button class="grimoire-btn" style="margin-top: auto; padding: 5px 8px; font-size: 11px; font-weight: bold; width: 100%; border-color: ${_customMapPickerMode ? '#38bdf8' : '#34d399'}; color: ${_customMapPickerMode ? '#38bdf8' : '#34d399'}; background: rgba(5, 150, 105, 0.15);" onclick="selectCustomMap('${file.url}', '${cleanTitle.replace(/'/g, "\\\\'")}')">
+            ${_customMapPickerMode ? '✓ Select for Preset' : '🗺️ Cast to Table'}
+          </button>
+        </div>
+      `;
+      grid.appendChild(card);
+    });
+  } catch (err) {
+    grid.innerHTML = `<div style="color: #ef4444; font-size: 13px;">Error loading map library: ${err.message}</div>`;
+  }
+}
+
+function selectCustomMap(url, title) {
+  if (_customMapPickerMode) {
+    const input = document.getElementById('presetTableSrc');
+    if (input) input.value = url;
+    const titleInput = document.getElementById('presetTableTitle');
+    if (titleInput && (!titleInput.value || titleInput.value.trim() === '')) {
+      titleInput.value = title;
+    }
+    closeCustomMapsModal();
+  } else {
+    setTableMap(url, title);
+    closeCustomMapsModal();
+    playChime(650, 'sine', 0.2);
+    alert(`Casting '${title}' onto the Overhead Table Projector!`);
+  }
+}
+
+async function handleCustomMapUpload(event) {
+  const file = event.target.files ? event.target.files[0] : null;
+  if (!file) return;
+
+  const statusEl = document.getElementById('customMapUploadStatus');
+  if (statusEl) {
+    statusEl.style.display = 'block';
+    statusEl.textContent = `Enchanting and uploading ${file.name}...`;
+    statusEl.style.color = '#38bdf8';
+  }
+
+  const formData = new FormData();
+  formData.append('file', file);
+
+  try {
+    const resp = await fetch('/api/media/upload', { method: 'POST', body: formData });
+    const data = await resp.json();
+    if (data.status === 'ok') {
+      playChime(750, 'sine', 0.2);
+      if (statusEl) {
+        statusEl.textContent = `✓ '${file.name}' uploaded successfully!`;
+        statusEl.style.color = '#34d399';
+      }
+      setTimeout(() => {
+        if (statusEl) statusEl.style.display = 'none';
+      }, 3000);
+      loadCustomMapsLibrary();
+    } else {
+      if (statusEl) {
+        statusEl.textContent = 'Upload failed.';
+        statusEl.style.color = '#ef4444';
+      }
+    }
+  } catch (err) {
+    if (statusEl) {
+      statusEl.textContent = 'Upload error: ' + err.message;
+      statusEl.style.color = '#ef4444';
+    }
+  } finally {
+    event.target.value = '';
+  }
+}
+
+async function deleteCustomMap(filename, event) {
+  event.stopPropagation();
+  if (!confirm(`Are you sure you want to delete '${filename}'?`)) return;
+
+  try {
+    const res = await fetch(`/api/media/${encodeURIComponent(filename)}`, { method: 'DELETE' });
+    const data = await res.json();
+    if (data.status === 'ok') {
+      loadCustomMapsLibrary();
+    }
+  } catch (err) {
+    alert("Could not delete file: " + err.message);
+  }
+}
+
+async function stopAllMirrors() {
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({ action: "STOP_MIRROR", screen: "table" }));
+    ws.send(JSON.stringify({ action: "STOP_MIRROR", screen: "window" }));
+    ws.send(JSON.stringify({ action: "STOP_MIRROR", screen: "frame" }));
+  }
+  try {
+    await fetch('/api/mirror/stop-all', { method: 'POST' });
+    playChime(600, 'sine', 0.2);
+    alert("All screen mirroring stopped! Table and room displays restored to current preset.");
+  } catch (e) {
+    console.error("Error stopping mirrors:", e);
+  }
+}
+
 // ==========================================
 // Arcane Screen & Window Mirroring Functions
 // ==========================================

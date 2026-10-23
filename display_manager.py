@@ -130,7 +130,9 @@ def position_window_on_monitor(hwnd: int, monitor: Dict[str, Any]):
         w, h = monitor["width"], monitor["height"]
         # Restore first in case it was maximized on another monitor
         ctypes.windll.user32.ShowWindow(hwnd, SW_RESTORE)
+        time.sleep(0.04)
         ctypes.windll.user32.SetWindowPos(hwnd, HWND_TOP, x, y, w, h, SWP_SHOWWINDOW)
+        time.sleep(0.04)
         ctypes.windll.user32.ShowWindow(hwnd, SW_MAXIMIZE)
         ctypes.windll.user32.BringWindowToTop(hwnd)
         ctypes.windll.user32.SetForegroundWindow(hwnd)
@@ -292,23 +294,49 @@ def launch_all_displays(config: Dict[str, Any], base_url: str = "https://localho
 
     # Schedule background verification to ensure Win32 coordinates are locked & in front
     def verify_and_nudge_windows():
-        time.sleep(2.0)
+        start_t = time.time()
+        positioned_screens = set()
         display_hwnds = set()
-        for screen_name, _, target_display_num in screen_targets:
-            matched_mon = next((m for m in monitors if m["index"] == target_display_num), None)
-            if not matched_mon and monitors:
-                matched_mon = monitors[(target_display_num - 1) % len(monitors)]
-            if not matched_mon:
-                continue
 
-            title_sub = f"- {screen_name.upper()}"
-            hwnds = find_windows_by_title_substring(title_sub)
-            for hwnd in hwnds:
-                display_hwnds.add(hwnd)
-                position_window_on_monitor(hwnd, matched_mon)
+        while time.time() - start_t < 12.0:
+            time.sleep(0.6)
+            for screen_name, friendly_name, target_display_num in screen_targets:
+                if screen_name in positioned_screens:
+                    continue
+
+                matched_mon = next((m for m in monitors if m["index"] == target_display_num), None)
+                if not matched_mon and monitors:
+                    matched_mon = monitors[(target_display_num - 1) % len(monitors)]
+                if not matched_mon:
+                    continue
+
+                # Search by standard display title format or fallback
+                title_subs = [f"- {screen_name.upper()}", f"Display [v"]
+                hwnds = []
+                for sub in title_subs:
+                    found = find_windows_by_title_substring(sub)
+                    # Filter if sub is general
+                    if sub == f"- {screen_name.upper()}":
+                        hwnds = found
+                        break
+                    elif len(screen_targets) == 1:
+                        hwnds = found
+                        break
+
+                if hwnds:
+                    for hwnd in hwnds:
+                        display_hwnds.add(hwnd)
+                        position_window_on_monitor(hwnd, matched_mon)
+                    positioned_screens.add(screen_name)
+                    logger.info(f"[DisplayManager] Snapped {friendly_name} onto {matched_mon['device']} (Display {target_display_num})")
+
+            # Check if all displays found
+            if len(positioned_screens) >= len(screen_targets):
+                logger.info("[DisplayManager] All display windows positioned successfully.")
+                break
 
         # Minimize the launcher window so it remains in the taskbar ready for use without covering displays
-        time.sleep(0.8)
+        time.sleep(0.5)
         launcher_hwnds = find_windows_by_title_substring("Launcher") + find_windows_by_title_substring("launcher")
         for l_hwnd in set(launcher_hwnds):
             if l_hwnd not in display_hwnds:

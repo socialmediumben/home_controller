@@ -18,7 +18,9 @@
 
     <!-- Live Mirror Container (Direct Low-Latency Frame Stream) -->
     <div id="mirrorLayer" class="display-layer mirror-layer" style="display: none;">
+      <video id="mirrorVideo" class="mirror-video" autoplay playsinline muted></video>
       <canvas id="mirrorCanvas" class="mirror-canvas"></canvas>
+      <button id="exitMirrorBtn" class="exit-mirror-btn" onclick="stopMirroringDisplay()">✕ Exit Screen Mirror</button>
     </div>
 
     <!-- Gothic Window Mullions Overlay (53" TV) -->
@@ -46,6 +48,17 @@
       </defs>
       <rect id="gridRect" width="100%" height="100%" fill="url(#gridPattern)" />
     </svg>
+
+    <!-- Display Identification Overlay -->
+    <div id="identifyOverlay" class="identify-overlay" style="display: none;" onclick="this.style.display='none'">
+      <div class="identify-card">
+        <div class="identify-icon" id="identifyIcon">🖥️</div>
+        <div class="identify-title" id="identifyTitle">DISPLAY IDENTIFIER</div>
+        <div class="identify-subtitle" id="identifySubtitle">Target Monitor: Display 1</div>
+        <div class="identify-details" id="identifyDetails">Screen: table • 1920x1080</div>
+        <div class="identify-tip">Adjust target monitor in Launcher if this is not on the correct physical device. Tap anywhere to dismiss.</div>
+      </div>
+    </div>
 
     <!-- Floating Toolbar (Hover to show) -->
     <div class="display-toolbar">
