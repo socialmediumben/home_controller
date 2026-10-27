@@ -100,3 +100,18 @@ In addition to pre-built atmospheric scenes and media, you can mirror **any appl
 * **Video Loops:** You can also drop animated `.mp4` or `.webm` battlemaps directly into the media folders—the displays support seamless looping video.
 * **Roll20 Support:** On the tablet spellbook, tap **Screen Overrides ➔ Table Projector ➔ Launch Roll20 Web Embed** and enter your campaign link to project Roll20 directly onto the tabletop.
 
+---
+
+## 🛠️ Architecture, Integration & Developer Hand-off
+
+Building another application, automation, or custom display client that integrates with The Wizard's Grimoire?
+
+📖 **See the complete [Developer Hand-off & Architecture Guide](HANDOFF.md)** for:
+* Full System Architecture Diagrams & Subsystem Breakdown
+* REST API Reference & JSON payload schemas
+* Real-Time WebSocket Protocol (`/ws`) specification
+* Standalone use of `hubspace.py` and `display_manager.py`
+* Recipes for integrating with Home Assistant, Foundry VTT, StreamDeck, Discord bots, and Twitch triggers
+* Troubleshooting & display calibration guides
+
+
