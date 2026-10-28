@@ -14,6 +14,7 @@ import socket
 import uuid
 from typing import Any, Dict, List, Optional
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, UploadFile, File
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -248,6 +249,15 @@ config = load_config()
 light_controller = LightController(config)
 
 app = FastAPI(title="Grimoire Game Room Controller", version=APP_VERSION)
+
+# Enable CORS for Companion App & Remote Access
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Cache-Busting Middleware
 @app.middleware("http")
